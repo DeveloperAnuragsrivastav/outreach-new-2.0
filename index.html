@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CampaignBuddy — AI Outbound Sales Platform</title>
+    <meta name="description"
+        content="CampaignBuddy helps sales teams close more deals automatically with AI-powered outbound campaigns." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Montserrat:wght@600&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="styles/global.css" />
+    <link rel="stylesheet" href="styles/components.css" />
+    <link rel="stylesheet" href="styles/pages.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+    <script src="https://unpkg.com/lucide@latest" defer></script>
+</head>
+
+<body>
+
+    <!-- PAGE LOADING BAR -->
+    <div id="page-loading-bar"></div>
+
+    <!-- TOAST CONTAINER -->
+    <div id="toast-container"></div>
+
+    <!-- ============================================================
+     PAGE 1: LOGIN (Commented Out)
+     ============================================================ -->
+    <!-- <div id="page-login" class="page active">
+... LOGIN HTML COMMENTED OUT ...
+    </div> -->
+
+    <!-- ============================================================
+     AUTHENTICATED SHELL (Sidebar + Topbar + Pages 2-5)
+     ============================================================ -->
+    <div id="app-shell" class="page active" style="display: flex;">
+
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <div class="logo-icon-dark">
+                        <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+                            <rect width="12" height="12" rx="3" fill="#0A0A0A" />
+                            <rect x="16" width="12" height="12" rx="3" fill="#0A0A0A" opacity="0.5" />
+                            <rect y="16" width="12" height="12" rx="3" fill="#0A0A0A" opacity="0.5" />
+                            <rect x="16" y="16" width="12" height="12" rx="3" fill="#0A0A0A" opacity="0.25" />
+                        </svg>
+                    </div>
+                    <span class="sidebar-logo-text">CampaignBuddy</span>
+                </div>
+                <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" onclick="toggleSidebar()"
+                    title="Collapse sidebar">
+                    <i data-lucide="panel-left-close" width="18" height="18"></i>
+                </button>
+            </div>
+            <nav class="sidebar-nav">
+                <!-- <a href="#" class="sidebar-nav-item" data-page="dashboard" onclick="navigateTo('dashboard')">
+                    <span class="nav-icon"><i data-lucide="layout-dashboard" width="18" height="18"></i></span>
+                    <span class="nav-label">Dashboard</span>
+                    <span class="nav-active-bar"></span>
+                </a> -->
+                <a href="#" class="sidebar-nav-item active" data-page="new-campaign"
+                    onclick="navigateTo('new-campaign')">
+                    <span class="nav-icon"><i data-lucide="plus-circle" width="18" height="18"></i></span>
+                    <span class="nav-label">New Campaign</span>
+                    <span class="nav-active-bar"></span>
+                </a>
+                <a href="#" class="sidebar-nav-item" data-page="campaign-report"
+                    onclick="navigateTo('campaign-report')">
+                    <span class="nav-icon"><i data-lucide="bar-chart-2" width="18" height="18"></i></span>
+                    <span class="nav-label">Reports</span>
+                    <span class="nav-active-bar"></span>
+                </a>
+                <!-- <a href="#" class="sidebar-nav-item" data-page="settings" onclick="navigateTo('settings')">
+                    <span class="nav-icon"><i data-lucide="settings" width="18" height="18"></i></span>
+                    <span class="nav-label">Settings</span>
+                    <span class="nav-active-bar"></span>
+                </a> -->
+            </nav>
+            <div class="sidebar-footer">
+                <!-- <button class="sidebar-logout-btn" onclick="navigateTo('login')">
+                    <span class="nav-icon"><i data-lucide="log-out" width="18" height="18"></i></span>
+                    <span class="nav-label">Sign Out</span>
+                </button> -->
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <div class="main-content" id="main-content">
+            <!-- TOPBAR REMOVED -->
+
+
+
+            <!-- PAGE 3: NEW CAMPAIGN WIZARD -->
+            <div id="page-new-campaign" class="inner-page active">
+                <!-- Parallax Header -->
+                <div class="page-parallax-header" id="new-campaign-header">
+                    <div class="parallax-bg"
+                        style="background-image: url('https://images.unsplash.com/photo-1497366216548-37526070297c?w=1400&q=80&auto=format&fit=crop')">
+                    </div>
+                    <div class="parallax-overlay"></div>
+                    <div class="parallax-content">
+                        <h1 class="parallax-title">New Campaign</h1>
+                        <p class="parallax-subtitle">Define your target audience and launch your AI-powered outreach.
+                        </p>
+                    </div>
+                    <button class="autofill-btn" onclick="autofillCampaignForm()" title="Autofill with sample data">
+                        <i data-lucide="pencil" width="15" height="15"></i>
+                        <span>Autofill</span>
+                    </button>
+                </div>
+
+                <div class="wizard-layout">
+                    <!-- LEFT: Form -->
+                    <div class="wizard-form-col">
+                        <!-- Section: Campaign Info -->
+                        <div class="wizard-section scroll-reveal">
+                            <div class="section-divider"><span class="section-divider-label">Your Campaign</span></div>
+                            <div class="form-field">
+                                <label for="campaign-name">Campaign Name</label>
+                                <input type="text" id="campaign-name" placeholder="e.g. Q2 Enterprise Outbound"
+                                    oninput="updatePreview()" />
+                            </div>
+                            <div class="form-field">
+                                <label for="campaign-goal">Primary Goal</label>
+                                <select id="campaign-goal" onchange="updatePreview()">
+                                    <option value="">Select a goal</option>
+                                    <option>Book discovery calls</option>
+                                    <option>Generate warm leads</option>
+                                    <option>Drive demo signups</option>
+                                    <option>Nurture existing contacts</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Section: Target Audience -->
+                        <div class="wizard-section scroll-reveal">
+                            <div class="section-divider"><span class="section-divider-label">Your Target Audience</span>
+                            </div>
+                            <div class="form-field">
+                                <label for="icp-title">Job Titles</label>
+                                <input type="text" id="icp-title" placeholder="e.g. VP of Sales, Head of Growth"
+                                    oninput="updatePreview()" />
+                            </div>
+                            <div class="form-field">
+                                <label for="icp-industry">Industries</label>
+                                <input type="text" id="icp-industry" placeholder="e.g. SaaS, FinTech, Healthcare"
+                                    oninput="updatePreview()" />
+                            </div>
+                            <div class="form-field">
+                                <label for="icp-size">Company Size</label>
+                                <select id="icp-size" onchange="updatePreview()">
+                                    <option value="">Any size</option>
+                                    <option>1–10 employees</option>
+                                    <option>11–50 employees</option>
+                                    <option>51–200 employees</option>
+                                    <option>201–1000 employees</option>
+                                    <option>1000+ employees</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label for="icp-geo">Geography</label>
+                                <input type="text" id="icp-geo" placeholder="e.g. United States, Europe"
+                                    oninput="updatePreview()" />
+                            </div>
+                        </div>
+
+                        <!-- Section: Sender Identity -->
+                        <div class="wizard-section scroll-reveal">
+                            <div class="section-divider"><span class="section-divider-label">Sender Identity</span>
+                            </div>
+                            <div class="form-row-2">
+                                <div class="form-field">
+                                    <label for="sender-name">Sender Name</label>
+                                    <input type="text" id="sender-name" placeholder="Alex Morgan"
+                                        oninput="updatePreview()" />
+                                </div>
+                                <div class="form-field">
+                                    <label for="sender-role">Role</label>
+                                    <input type="text" id="sender-role" placeholder="Head of Partnerships"
+                                        oninput="updatePreview()" />
+                                </div>
+                            </div>
+                            <div class="form-field">
+                                <label for="sender-email">Sending Email</label>
+                                <input type="email" id="sender-email" placeholder="alex@yourcompany.com"
+                                    oninput="updatePreview()" />
+                            </div>
+                        </div>
+
+                        <!-- Section: Campaign Scale -->
+                        <div class="wizard-section scroll-reveal">
+                            <div class="section-divider"><span class="section-divider-label">Campaign Scale</span></div>
+                            <div class="form-field">
+                                <label for="campaign-scale">Number of Prospects</label>
+                                <input type="number" id="campaign-scale" placeholder="e.g. 250" value="250" min="1" />
+                            </div>
+                        </div>
+
+                        <!-- Launch Button -->
+                        <div class="wizard-launch scroll-reveal">
+                            <button class="btn-launch" id="launch-btn" onclick="openConfirmModal()">
+                                <span class="launch-text">Launch Campaign</span>
+                                <span class="launch-arrow"><i data-lucide="arrow-right" width="18"
+                                        height="18"></i></span>
+                            </button>
+                            <!-- Inline Error Alert -->
+                            <div id="form-error-alert" class="toast error hidden"
+                                style="position: static; width: 100%; margin-top: 16px; transform: none; animation: none; opacity: 1; display: none;">
+                                <span class="toast-icon" style="color: var(--danger);">✕</span>
+                                <div class="toast-body">
+                                    <div class="toast-title" style="color: var(--danger);">Error</div>
+                                    <div class="toast-message" id="form-error-message"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE 4: CAMPAIGN REPORT -->
+            <div id="page-campaign-report" class="inner-page">
+                <div class="report-header">
+                    <div class="report-header-top">
+                        <a href="#" class="breadcrumb-back" onclick="navigateTo('new-campaign')">
+                            <span class="back-arrow"><i data-lucide="arrow-left" width="16" height="16"></i></span>
+                            New Campaign
+                        </a>
+                    </div>
+                    <div class="report-title-row">
+                        <div>
+                            <h1 class="report-title">Campaign History</h1>
+                            <div class="report-title-underline"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Campaign History Table -->
+                <div class="table-section scroll-reveal" style="margin-top: 24px;">
+                    <div class="table-wrap">
+                        <table class="campaign-table">
+                            <thead>
+                                <tr>
+                                    <th>Campaign Name</th>
+                                    <th>Status</th>
+                                    <th>Sent</th>
+                                </tr>
+                            </thead>
+                            <tbody id="campaign-tbody">
+                                <tr class="table-row-anim">
+                                    <td class="campaign-name-cell">
+                                        <span class="campaign-name">Q1 SaaS Outbound</span>
+                                        <span class="campaign-date">Started Jan 10, 2026</span>
+                                    </td>
+                                    <td><span class="status-badge active">Running</span></td>
+                                    <td>6,240</td>
+                                </tr>
+                                <tr class="table-row-anim">
+                                    <td class="campaign-name-cell">
+                                        <span class="campaign-name">Enterprise Expansion</span>
+                                        <span class="campaign-date">Started Jan 28, 2026</span>
+                                    </td>
+                                    <td><span class="status-badge generating">Not Running</span></td>
+                                    <td>0</td>
+                                </tr>
+                                <tr class="table-row-anim">
+                                    <td class="campaign-name-cell">
+                                        <span class="campaign-name">Mid-Market Blitz</span>
+                                        <span class="campaign-date">Started Feb 3, 2026</span>
+                                    </td>
+                                    <td><span class="status-badge paused">Not Running</span></td>
+                                    <td>3,100</td>
+                                </tr>
+                                <tr class="table-row-anim">
+                                    <td class="campaign-name-cell">
+                                        <span class="campaign-name">Holiday Outreach 2025</span>
+                                        <span class="campaign-date">Ended Dec 31, 2025</span>
+                                    </td>
+                                    <td><span class="status-badge completed">Completed</span></td>
+                                    <td>9,840</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE 5: SETTINGS (Commented Out) -->
+
+
+            <!-- CONFIRMATION MODAL -->
+            <div id="confirm-modal" class="modal-backdrop hidden" onclick="closeModalOnBackdrop(event)">
+                <div class="modal-box" id="modal-box">
+                    <div class="modal-checkmark-wrap">
+                        <svg class="modal-check-svg" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="26" cy="26" r="25" stroke="#0A0A0A" stroke-width="2" />
+                            <path class="check-path" d="M14 26l8 8 16-16" stroke="#0A0A0A" stroke-width="2.5"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                    <h2 class="modal-title">Campaign Launched!</h2>
+                    <p class="modal-body">Your campaign is now live. Our AI is identifying and reaching out to your
+                        ideal prospects. You'll get a notification when the first replies come in.</p>
+                    <div class="modal-actions">
+                        <button class="btn-primary" onclick="closeConfirmModal()">Got it</button>
+                        <a href="#" class="modal-link" onclick="closeConfirmModalAndGo()">View Report</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/animations.js"></script>
+</body>
+
+</html>
