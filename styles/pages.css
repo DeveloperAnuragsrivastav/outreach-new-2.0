@@ -941,3 +941,51 @@
 /* Detail page table column widths */
 #detail-tbody tr td:nth-child(1) { width: 48px; }
 #detail-tbody tr td:nth-child(4) { width: 160px; }
+
+/* ============================================================
+   CAMPAIGN DETAIL TABLE — 4-column layout overrides
+   ============================================================ */
+#page-campaign-detail .campaign-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+#page-campaign-detail .campaign-table th:nth-child(1),
+#page-campaign-detail .campaign-table td:nth-child(1) {
+    width: 48px;
+    min-width: 48px;
+}
+
+#page-campaign-detail .campaign-table th:nth-child(2),
+#page-campaign-detail .campaign-table td:nth-child(2) {
+    width: 28%;
+}
+
+#page-campaign-detail .campaign-table th:nth-child(3),
+#page-campaign-detail .campaign-table td:nth-child(3) {
+    width: auto;
+}
+
+#page-campaign-detail .campaign-table th:nth-child(4),
+#page-campaign-detail .campaign-table td:nth-child(4) {
+    width: 160px;
+    min-width: 140px;
+    white-space: nowrap;
+}
+
+/* Campaign History table — 3-column layout */
+#page-campaign-report .campaign-table th:nth-child(1),
+#page-campaign-report .campaign-table td:nth-child(1) {
+    width: 55%;
+}
+
+#page-campaign-report .campaign-table th:nth-child(2),
+#page-campaign-report .campaign-table td:nth-child(2) {
+    width: 20%;
+}
+
+#page-campaign-report .campaign-table th:nth-child(3),
+#page-campaign-report .campaign-table td:nth-child(3) {
+    width: 25%;
+    text-align: right;
+}
