@@ -1,35 +1,18 @@
 /* ============================================================
    CAMPAIGNBUDDY — SUPABASE REAL-TIME INTEGRATION
    Uses ONLY the `campaignsdata` table
-
-   LOCAL DEV: Run `node server.js` and open http://localhost:3000
-   The proxy in server.js forwards all /rest/v1/* calls to Supabase.
-   No direct calls to supabase.co are made from the browser.
-
-   PROD: Replace API_BASE with full Supabase URL:
-     const API_BASE = 'https://mjffvxkothiczayhkjcx.supabase.co';
    ============================================================ */
 
+const SUPABASE_URL = 'https://mjffvxkothiczayhkjcx.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qZmZ2eGtvdGhpY3pheWhramN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwOTEyNjEsImV4cCI6MjA4NzY2NzI2MX0.-g4vsENBmQnCk-M7c-k_lax-tTV2BOJEZxtFEDYxgEc';
 
-// AUTO-DETECT: use local proxy on localhost:3000, real URL on production
-// TO REMOVE FOR PROD: set API_BASE = 'https://mjffvxkothiczayhkjcx.supabase.co'
-const _isLocalProxy = window.location.hostname === 'localhost' && window.location.port === '3000';
-const API_BASE = _isLocalProxy
-  ? `${window.location.protocol}//${window.location.host}`
-  : 'https://mjffvxkothiczayhkjcx.supabase.co';
-
-const SUPABASE_HEADERS = {
-  'apikey': SUPABASE_ANON_KEY,
-  'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-  'Content-Type': 'application/json',
-  'Accept': 'application/json',
-};
+// Initialize Supabase client
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ── State ──────────────────────────────────────────────────────
-let _pollInterval = null;
-let _detailPollInterval = null;
+let realtimeChannel = null;
 let currentDetailCampaign = null;
+let detailRealtimeChannel = null;
 
 // ── Helpers ────────────────────────────────────────────────────
 function formatDate(isoString) {
@@ -52,51 +35,12 @@ function truncate(str, len = 90) {
   return str.length > len ? str.substring(0, len) + '…' : str;
 }
 
-function escapeHtml(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-function slugify(str) {
-  return String(str).toLowerCase().replace(/[^a-z0-9]/g, '-');
-}
-
-// ── REST API helper ────────────────────────────────────────────
-async function supabaseFetch(path) {
-  const res = await fetch(`${API_BASE}/rest/v1/${path}`, {
-    headers: SUPABASE_HEADERS,
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`HTTP ${res.status}: ${text}`);
-  }
-  return res.json();
-}
-
-// ── Live indicator ─────────────────────────────────────────────
-function setLiveIndicator(connected) {
-  const indicator = document.getElementById('realtime-indicator');
-  if (!indicator) return;
-  if (connected) {
-    indicator.classList.add('connected');
-  } else {
-    indicator.classList.remove('connected');
-  }
-}
-
-function flashLiveIndicator() {
-  const dot = document.querySelector('.realtime-dot');
-  if (!dot) return;
-  dot.classList.add('flash');
-  setTimeout(() => dot.classList.remove('flash'), 800);
-}
-
 // ── Campaign History Page ──────────────────────────────────────
+
+/**
+ * Fetch all campaigns from campaignsdata grouped by campaign_name
+ * and render them in the history table with real-time count.
+ */
 async function loadCampaignHistory() {
   const tbody = document.getElementById('campaign-tbody');
   if (!tbody) return;
@@ -104,17 +48,23 @@ async function loadCampaignHistory() {
   tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:32px;color:#999;">Loading campaigns...</td></tr>`;
 
   try {
-    const data = await supabaseFetch('campaignsdata?select=campaign_name,created_at&order=created_at.desc');
+    const { data, error } = await _supabase
+      .from('campaignsdata')
+      .select('campaign_name, created_at')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
     renderCampaignHistory(data || []);
-    setLiveIndicator(true);
-    flashLiveIndicator();
   } catch (err) {
     console.error('Error loading campaign history:', err);
     tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:32px;color:#e74c3c;">Failed to load campaigns. Please try again.</td></tr>`;
-    setLiveIndicator(false);
   }
 }
 
+/**
+ * Group rows by campaign_name and render the history table.
+ */
 function renderCampaignHistory(rows) {
   const tbody = document.getElementById('campaign-tbody');
   if (!tbody) return;
@@ -164,22 +114,48 @@ function renderCampaignHistory(rows) {
   if (window.lucide) window.lucide.createIcons();
 }
 
-// Poll every 10 seconds for real-time-like updates
-function startHistoryPolling() {
-  stopHistoryPolling();
-  _pollInterval = setInterval(() => {
-    loadCampaignHistory();
-  }, 10000);
+/**
+ * Subscribe to real-time changes on campaignsdata table.
+ */
+function subscribeToHistory() {
+  if (realtimeChannel) {
+    _supabase.removeChannel(realtimeChannel);
+    realtimeChannel = null;
+  }
+
+  realtimeChannel = _supabase
+    .channel('campaignsdata-history')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'campaignsdata' },
+      (payload) => {
+        console.log('Real-time update received:', payload);
+        loadCampaignHistory();
+        flashLiveIndicator();
+      }
+    )
+    .subscribe((status) => {
+      console.log('Realtime subscription status:', status);
+      const indicator = document.getElementById('realtime-indicator');
+      if (indicator) {
+        if (status === 'SUBSCRIBED') {
+          indicator.classList.add('connected');
+        } else {
+          indicator.classList.remove('connected');
+        }
+      }
+    });
 }
 
-function stopHistoryPolling() {
-  if (_pollInterval) {
-    clearInterval(_pollInterval);
-    _pollInterval = null;
-  }
+function flashLiveIndicator() {
+  const dot = document.querySelector('.realtime-dot');
+  if (!dot) return;
+  dot.classList.add('flash');
+  setTimeout(() => dot.classList.remove('flash'), 800);
 }
 
 // ── Campaign Detail Page ───────────────────────────────────────
+
 async function openCampaignDetail(campaignName) {
   currentDetailCampaign = campaignName;
 
@@ -188,7 +164,7 @@ async function openCampaignDetail(campaignName) {
 
   navigateTo('campaign-detail');
   await loadCampaignDetail(campaignName);
-  startDetailPolling(campaignName);
+  subscribeToDetail(campaignName);
 }
 
 async function loadCampaignDetail(campaignName) {
@@ -200,10 +176,14 @@ async function loadCampaignDetail(campaignName) {
   if (countEl) countEl.textContent = '…';
 
   try {
-    const encoded = encodeURIComponent(campaignName);
-    const data = await supabaseFetch(
-      `campaignsdata?select=id,campaign_name,email_subject,email_body,created_at&campaign_name=eq.${encoded}&order=created_at.asc`
-    );
+    const { data, error } = await _supabase
+      .from('campaignsdata')
+      .select('id, campaign_name, email_subject, email_body, created_at')
+      .eq('campaign_name', campaignName)
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+
     renderCampaignDetail(data || []);
   } catch (err) {
     console.error('Error loading campaign detail:', err);
@@ -243,18 +223,43 @@ function renderCampaignDetail(rows) {
   if (window.lucide) window.lucide.createIcons();
 }
 
-function startDetailPolling(campaignName) {
-  stopDetailPolling();
-  _detailPollInterval = setInterval(() => {
-    loadCampaignDetail(campaignName);
-  }, 10000);
+function subscribeToDetail(campaignName) {
+  if (detailRealtimeChannel) {
+    _supabase.removeChannel(detailRealtimeChannel);
+    detailRealtimeChannel = null;
+  }
+
+  detailRealtimeChannel = _supabase
+    .channel('campaignsdata-detail-' + slugify(campaignName))
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'campaignsdata',
+        filter: `campaign_name=eq.${campaignName}`
+      },
+      (payload) => {
+        console.log('Detail real-time update:', payload);
+        loadCampaignDetail(campaignName);
+      }
+    )
+    .subscribe();
 }
 
-function stopDetailPolling() {
-  if (_detailPollInterval) {
-    clearInterval(_detailPollInterval);
-    _detailPollInterval = null;
-  }
+// ── Utility ────────────────────────────────────────────────────
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function slugify(str) {
+  return String(str).toLowerCase().replace(/[^a-z0-9]/g, '-');
 }
 
 // ── Hook into existing initReport ─────────────────────────────
@@ -262,18 +267,16 @@ const _originalInitReport = window.initReport;
 window.initReport = function () {
   if (_originalInitReport) _originalInitReport();
   loadCampaignHistory();
-  startHistoryPolling();
+  subscribeToHistory();
 };
 
 // ── Cleanup on page leave ──────────────────────────────────────
 const _originalNavigateTo = window.navigateTo;
 window.navigateTo = function (page) {
-  if (page !== 'campaign-detail') {
-    stopDetailPolling();
+  if (page !== 'campaign-detail' && detailRealtimeChannel) {
+    _supabase.removeChannel(detailRealtimeChannel);
+    detailRealtimeChannel = null;
     currentDetailCampaign = null;
-  }
-  if (page !== 'report') {
-    stopHistoryPolling();
   }
   _originalNavigateTo(page);
 };
