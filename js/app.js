@@ -57,6 +57,7 @@ function navigateTo(page) {
     initScrollReveal();
     initIcons();
   }, 50);
+
 }
 
 // ── Login handler ──────────────────────────────────────────────
