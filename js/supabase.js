@@ -3,8 +3,16 @@
    Uses ONLY the `campaignsdata` table
    ============================================================ */
 
-const SUPABASE_URL = 'https://mjffvxkothiczayhkjcx.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qZmZ2eGtvdGhpY3pheWhramN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwOTEyNjEsImV4cCI6MjA4NzY2NzI2MX0.-g4vsENBmQnCk-M7c-k_lax-tTV2BOJEZxtFEDYxgEc';
+
+// AUTO-DETECT: Use local proxy when running on localhost:3000 (node server.js)
+// Use real Supabase URL when on production / any other host
+// TO REMOVE FOR PROD: replace the whole block with just:
+//   const SUPABASE_URL = 'https://mjffvxkothiczayhkjcx.supabase.co';
+const _isLocalProxy = window.location.hostname === 'localhost' && window.location.port === '3000';
+const SUPABASE_URL = _isLocalProxy
+  ? `${window.location.protocol}//${window.location.host}`
+  : 'https://mjffvxkothiczayhkjcx.supabase.co';
 
 // Initialize Supabase client
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
