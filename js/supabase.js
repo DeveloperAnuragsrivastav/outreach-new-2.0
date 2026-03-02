@@ -1,26 +1,35 @@
 /* ============================================================
    CAMPAIGNBUDDY — SUPABASE REAL-TIME INTEGRATION
    Uses ONLY the `campaignsdata` table
+
+   LOCAL DEV: Run `node server.js` and open http://localhost:3000
+   The proxy in server.js forwards all /rest/v1/* calls to Supabase.
+   No direct calls to supabase.co are made from the browser.
+
+   PROD: Replace API_BASE with full Supabase URL:
+     const API_BASE = 'https://mjffvxkothiczayhkjcx.supabase.co';
    ============================================================ */
 
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qZmZ2eGtvdGhpY3pheWhramN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwOTEyNjEsImV4cCI6MjA4NzY2NzI2MX0.-g4vsENBmQnCk-M7c-k_lax-tTV2BOJEZxtFEDYxgEc';
 
-// AUTO-DETECT: Use local proxy when running on localhost:3000 (node server.js)
-// Use real Supabase URL when on production / any other host
-// TO REMOVE FOR PROD: replace the whole block with just:
-//   const SUPABASE_URL = 'https://mjffvxkothiczayhkjcx.supabase.co';
+// AUTO-DETECT: use local proxy on localhost:3000, real URL on production
+// TO REMOVE FOR PROD: set API_BASE = 'https://mjffvxkothiczayhkjcx.supabase.co'
 const _isLocalProxy = window.location.hostname === 'localhost' && window.location.port === '3000';
-const SUPABASE_URL = _isLocalProxy
+const API_BASE = _isLocalProxy
   ? `${window.location.protocol}//${window.location.host}`
   : 'https://mjffvxkothiczayhkjcx.supabase.co';
 
-// Initialize Supabase client
-const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_HEADERS = {
+  'apikey': SUPABASE_ANON_KEY,
+  'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+  'Content-Type': 'application/json',
+  'Accept': 'application/json',
+};
 
 // ── State ──────────────────────────────────────────────────────
-let realtimeChannel = null;
+let _pollInterval = null;
+let _detailPollInterval = null;
 let currentDetailCampaign = null;
-let detailRealtimeChannel = null;
 
 // ── Helpers ────────────────────────────────────────────────────
 function formatDate(isoString) {
@@ -43,12 +52,51 @@ function truncate(str, len = 90) {
   return str.length > len ? str.substring(0, len) + '…' : str;
 }
 
-// ── Campaign History Page ──────────────────────────────────────
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
-/**
- * Fetch all campaigns from campaignsdata grouped by campaign_name
- * and render them in the history table with real-time count.
- */
+function slugify(str) {
+  return String(str).toLowerCase().replace(/[^a-z0-9]/g, '-');
+}
+
+// ── REST API helper ────────────────────────────────────────────
+async function supabaseFetch(path) {
+  const res = await fetch(`${API_BASE}/rest/v1/${path}`, {
+    headers: SUPABASE_HEADERS,
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`HTTP ${res.status}: ${text}`);
+  }
+  return res.json();
+}
+
+// ── Live indicator ─────────────────────────────────────────────
+function setLiveIndicator(connected) {
+  const indicator = document.getElementById('realtime-indicator');
+  if (!indicator) return;
+  if (connected) {
+    indicator.classList.add('connected');
+  } else {
+    indicator.classList.remove('connected');
+  }
+}
+
+function flashLiveIndicator() {
+  const dot = document.querySelector('.realtime-dot');
+  if (!dot) return;
+  dot.classList.add('flash');
+  setTimeout(() => dot.classList.remove('flash'), 800);
+}
+
+// ── Campaign History Page ──────────────────────────────────────
 async function loadCampaignHistory() {
   const tbody = document.getElementById('campaign-tbody');
   if (!tbody) return;
@@ -56,24 +104,17 @@ async function loadCampaignHistory() {
   tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:32px;color:#999;">Loading campaigns...</td></tr>`;
 
   try {
-    // Get all rows from campaignsdata
-    const { data, error } = await _supabase
-      .from('campaignsdata')
-      .select('campaign_name, created_at')
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-
+    const data = await supabaseFetch('campaignsdata?select=campaign_name,created_at&order=created_at.desc');
     renderCampaignHistory(data || []);
+    setLiveIndicator(true);
+    flashLiveIndicator();
   } catch (err) {
     console.error('Error loading campaign history:', err);
     tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:32px;color:#e74c3c;">Failed to load campaigns. Please try again.</td></tr>`;
+    setLiveIndicator(false);
   }
 }
 
-/**
- * Group rows by campaign_name and render the history table.
- */
 function renderCampaignHistory(rows) {
   const tbody = document.getElementById('campaign-tbody');
   if (!tbody) return;
@@ -91,16 +132,14 @@ function renderCampaignHistory(rows) {
       grouped[name] = { count: 0, firstDate: row.created_at };
     }
     grouped[name].count++;
-    // Track earliest date
     if (row.created_at < grouped[name].firstDate) {
       grouped[name].firstDate = row.created_at;
     }
   });
 
-  const campaigns = Object.entries(grouped).sort((a, b) => {
-    // Sort by first date descending
-    return new Date(b[1].firstDate) - new Date(a[1].firstDate);
-  });
+  const campaigns = Object.entries(grouped).sort((a, b) =>
+    new Date(b[1].firstDate) - new Date(a[1].firstDate)
+  );
 
   tbody.innerHTML = '';
   campaigns.forEach(([name, info]) => {
@@ -122,79 +161,36 @@ function renderCampaignHistory(rows) {
     tbody.appendChild(tr);
   });
 
-  // Re-init icons
   if (window.lucide) window.lucide.createIcons();
 }
 
-/**
- * Subscribe to real-time changes on campaignsdata table
- * and refresh the history table when data changes.
- */
-function subscribeToHistory() {
-  // Clean up existing subscription
-  if (realtimeChannel) {
-    _supabase.removeChannel(realtimeChannel);
-    realtimeChannel = null;
-  }
-
-  realtimeChannel = _supabase
-    .channel('campaignsdata-history')
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'campaignsdata' },
-      (payload) => {
-        console.log('Real-time update received:', payload);
-        // Reload the full history on any change
-        loadCampaignHistory();
-        // Flash the live indicator
-        flashLiveIndicator();
-      }
-    )
-    .subscribe((status) => {
-      console.log('Realtime subscription status:', status);
-      const indicator = document.getElementById('realtime-indicator');
-      if (indicator) {
-        if (status === 'SUBSCRIBED') {
-          indicator.classList.add('connected');
-        } else {
-          indicator.classList.remove('connected');
-        }
-      }
-    });
+// Poll every 10 seconds for real-time-like updates
+function startHistoryPolling() {
+  stopHistoryPolling();
+  _pollInterval = setInterval(() => {
+    loadCampaignHistory();
+  }, 10000);
 }
 
-function flashLiveIndicator() {
-  const dot = document.querySelector('.realtime-dot');
-  if (!dot) return;
-  dot.classList.add('flash');
-  setTimeout(() => dot.classList.remove('flash'), 800);
+function stopHistoryPolling() {
+  if (_pollInterval) {
+    clearInterval(_pollInterval);
+    _pollInterval = null;
+  }
 }
 
 // ── Campaign Detail Page ───────────────────────────────────────
-
-/**
- * Open the campaign detail page for a specific campaign name.
- */
 async function openCampaignDetail(campaignName) {
   currentDetailCampaign = campaignName;
 
-  // Update title
   const titleEl = document.getElementById('detail-campaign-title');
   if (titleEl) titleEl.textContent = campaignName;
 
-  // Navigate to detail page
   navigateTo('campaign-detail');
-
-  // Load emails
   await loadCampaignDetail(campaignName);
-
-  // Subscribe to real-time updates for this campaign
-  subscribeToDetail(campaignName);
+  startDetailPolling(campaignName);
 }
 
-/**
- * Fetch all emails for a specific campaign from campaignsdata.
- */
 async function loadCampaignDetail(campaignName) {
   const tbody = document.getElementById('detail-tbody');
   const countEl = document.getElementById('detail-sent-count');
@@ -204,14 +200,10 @@ async function loadCampaignDetail(campaignName) {
   if (countEl) countEl.textContent = '…';
 
   try {
-    const { data, error } = await _supabase
-      .from('campaignsdata')
-      .select('id, campaign_name, email_subject, email_body, created_at')
-      .eq('campaign_name', campaignName)
-      .order('created_at', { ascending: true });
-
-    if (error) throw error;
-
+    const encoded = encodeURIComponent(campaignName);
+    const data = await supabaseFetch(
+      `campaignsdata?select=id,campaign_name,email_subject,email_body,created_at&campaign_name=eq.${encoded}&order=created_at.asc`
+    );
     renderCampaignDetail(data || []);
   } catch (err) {
     console.error('Error loading campaign detail:', err);
@@ -219,9 +211,6 @@ async function loadCampaignDetail(campaignName) {
   }
 }
 
-/**
- * Render the detail table rows.
- */
 function renderCampaignDetail(rows) {
   const tbody = document.getElementById('detail-tbody');
   const countEl = document.getElementById('detail-sent-count');
@@ -254,67 +243,37 @@ function renderCampaignDetail(rows) {
   if (window.lucide) window.lucide.createIcons();
 }
 
-/**
- * Subscribe to real-time changes for a specific campaign's detail view.
- */
-function subscribeToDetail(campaignName) {
-  // Clean up existing
-  if (detailRealtimeChannel) {
-    _supabase.removeChannel(detailRealtimeChannel);
-    detailRealtimeChannel = null;
+function startDetailPolling(campaignName) {
+  stopDetailPolling();
+  _detailPollInterval = setInterval(() => {
+    loadCampaignDetail(campaignName);
+  }, 10000);
+}
+
+function stopDetailPolling() {
+  if (_detailPollInterval) {
+    clearInterval(_detailPollInterval);
+    _detailPollInterval = null;
   }
-
-  detailRealtimeChannel = _supabase
-    .channel('campaignsdata-detail-' + slugify(campaignName))
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'campaignsdata',
-        filter: `campaign_name=eq.${campaignName}`
-      },
-      (payload) => {
-        console.log('Detail real-time update:', payload);
-        loadCampaignDetail(campaignName);
-      }
-    )
-    .subscribe();
-}
-
-// ── Utility ────────────────────────────────────────────────────
-function escapeHtml(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-function slugify(str) {
-  return String(str).toLowerCase().replace(/[^a-z0-9]/g, '-');
 }
 
 // ── Hook into existing initReport ─────────────────────────────
-// Override the existing initReport function to load real-time data
 const _originalInitReport = window.initReport;
 window.initReport = function () {
   if (_originalInitReport) _originalInitReport();
   loadCampaignHistory();
-  subscribeToHistory();
+  startHistoryPolling();
 };
 
 // ── Cleanup on page leave ──────────────────────────────────────
-// Unsubscribe detail channel when leaving detail page
 const _originalNavigateTo = window.navigateTo;
 window.navigateTo = function (page) {
-  // If leaving detail page, unsubscribe detail channel
-  if (page !== 'campaign-detail' && detailRealtimeChannel) {
-    _supabase.removeChannel(detailRealtimeChannel);
-    detailRealtimeChannel = null;
+  if (page !== 'campaign-detail') {
+    stopDetailPolling();
     currentDetailCampaign = null;
+  }
+  if (page !== 'report') {
+    stopHistoryPolling();
   }
   _originalNavigateTo(page);
 };
