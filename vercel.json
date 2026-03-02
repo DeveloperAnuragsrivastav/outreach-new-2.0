@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/api/campaigns", "destination": "/api/campaigns" },
+    { "source": "/api/campaign-detail", "destination": "/api/campaign-detail" }
+  ]
+}

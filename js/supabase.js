@@ -1,18 +1,14 @@
 /* ============================================================
-   CAMPAIGNBUDDY — SUPABASE REAL-TIME INTEGRATION
-   Uses ONLY the `campaignsdata` table
+   CAMPAIGNBUDDY — CAMPAIGN HISTORY + DETAIL
+   Uses Vercel Serverless Functions (/api/*) to fetch data
+   Browser NEVER calls supabase.co directly
+   Polls every 8 seconds for near-real-time updates
    ============================================================ */
 
-const SUPABASE_URL = 'https://mjffvxkothiczayhkjcx.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qZmZ2eGtvdGhpY3pheWhramN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwOTEyNjEsImV4cCI6MjA4NzY2NzI2MX0.-g4vsENBmQnCk-M7c-k_lax-tTV2BOJEZxtFEDYxgEc';
-
-// Initialize Supabase client
-const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
 // ── State ──────────────────────────────────────────────────────
-let realtimeChannel = null;
+let _pollInterval = null;
+let _detailPollInterval = null;
 let currentDetailCampaign = null;
-let detailRealtimeChannel = null;
 
 // ── Helpers ────────────────────────────────────────────────────
 function formatDate(isoString) {
@@ -35,36 +31,68 @@ function truncate(str, len = 90) {
   return str.length > len ? str.substring(0, len) + '…' : str;
 }
 
-// ── Campaign History Page ──────────────────────────────────────
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
-/**
- * Fetch all campaigns from campaignsdata grouped by campaign_name
- * and render them in the history table with real-time count.
- */
+function slugify(str) {
+  return String(str).toLowerCase().replace(/[^a-z0-9]/g, '-');
+}
+
+// ── Live indicator ─────────────────────────────────────────────
+function setLiveIndicator(connected) {
+  const indicator = document.getElementById('realtime-indicator');
+  if (!indicator) return;
+  if (connected) {
+    indicator.classList.add('connected');
+  } else {
+    indicator.classList.remove('connected');
+  }
+}
+
+function flashLiveIndicator() {
+  const dot = document.querySelector('.realtime-dot');
+  if (!dot) return;
+  dot.classList.add('flash');
+  setTimeout(() => dot.classList.remove('flash'), 800);
+}
+
+// ── Campaign History Page ──────────────────────────────────────
 async function loadCampaignHistory() {
   const tbody = document.getElementById('campaign-tbody');
   if (!tbody) return;
 
-  tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:32px;color:#999;">Loading campaigns...</td></tr>`;
+  // Only show loading on first load
+  if (!tbody.dataset.loaded) {
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:32px;color:#999;">Loading campaigns...</td></tr>`;
+  }
 
   try {
-    const { data, error } = await _supabase
-      .from('campaignsdata')
-      .select('campaign_name, created_at')
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-
+    const res = await fetch('/api/campaigns');
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
     renderCampaignHistory(data || []);
+    tbody.dataset.loaded = 'true';
+    setLiveIndicator(true);
+    flashLiveIndicator();
   } catch (err) {
     console.error('Error loading campaign history:', err);
-    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:32px;color:#e74c3c;">Failed to load campaigns. Please try again.</td></tr>`;
+    if (!tbody.dataset.loaded) {
+      tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:32px;color:#e74c3c;">Failed to load campaigns. Please try again.</td></tr>`;
+    }
+    setLiveIndicator(false);
   }
 }
 
-/**
- * Group rows by campaign_name and render the history table.
- */
 function renderCampaignHistory(rows) {
   const tbody = document.getElementById('campaign-tbody');
   if (!tbody) return;
@@ -114,48 +142,22 @@ function renderCampaignHistory(rows) {
   if (window.lucide) window.lucide.createIcons();
 }
 
-/**
- * Subscribe to real-time changes on campaignsdata table.
- */
-function subscribeToHistory() {
-  if (realtimeChannel) {
-    _supabase.removeChannel(realtimeChannel);
-    realtimeChannel = null;
-  }
-
-  realtimeChannel = _supabase
-    .channel('campaignsdata-history')
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'campaignsdata' },
-      (payload) => {
-        console.log('Real-time update received:', payload);
-        loadCampaignHistory();
-        flashLiveIndicator();
-      }
-    )
-    .subscribe((status) => {
-      console.log('Realtime subscription status:', status);
-      const indicator = document.getElementById('realtime-indicator');
-      if (indicator) {
-        if (status === 'SUBSCRIBED') {
-          indicator.classList.add('connected');
-        } else {
-          indicator.classList.remove('connected');
-        }
-      }
-    });
+// Poll every 8 seconds for near-real-time updates
+function startHistoryPolling() {
+  stopHistoryPolling();
+  _pollInterval = setInterval(() => {
+    loadCampaignHistory();
+  }, 8000);
 }
 
-function flashLiveIndicator() {
-  const dot = document.querySelector('.realtime-dot');
-  if (!dot) return;
-  dot.classList.add('flash');
-  setTimeout(() => dot.classList.remove('flash'), 800);
+function stopHistoryPolling() {
+  if (_pollInterval) {
+    clearInterval(_pollInterval);
+    _pollInterval = null;
+  }
 }
 
 // ── Campaign Detail Page ───────────────────────────────────────
-
 async function openCampaignDetail(campaignName) {
   currentDetailCampaign = campaignName;
 
@@ -164,7 +166,7 @@ async function openCampaignDetail(campaignName) {
 
   navigateTo('campaign-detail');
   await loadCampaignDetail(campaignName);
-  subscribeToDetail(campaignName);
+  startDetailPolling(campaignName);
 }
 
 async function loadCampaignDetail(campaignName) {
@@ -172,22 +174,26 @@ async function loadCampaignDetail(campaignName) {
   const countEl = document.getElementById('detail-sent-count');
   if (!tbody) return;
 
-  tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:32px;color:#999;">Loading emails...</td></tr>`;
-  if (countEl) countEl.textContent = '…';
+  if (!tbody.dataset.loaded) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:32px;color:#999;">Loading emails...</td></tr>`;
+  }
+  if (countEl && !tbody.dataset.loaded) countEl.textContent = '…';
 
   try {
-    const { data, error } = await _supabase
-      .from('campaignsdata')
-      .select('id, campaign_name, email_subject, email_body, created_at')
-      .eq('campaign_name', campaignName)
-      .order('created_at', { ascending: true });
-
-    if (error) throw error;
-
+    const encoded = encodeURIComponent(campaignName);
+    const res = await fetch(`/api/campaign-detail?name=${encoded}`);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
     renderCampaignDetail(data || []);
+    tbody.dataset.loaded = 'true';
   } catch (err) {
     console.error('Error loading campaign detail:', err);
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:32px;color:#e74c3c;">Failed to load emails.</td></tr>`;
+    if (!tbody.dataset.loaded) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:32px;color:#e74c3c;">Failed to load emails.</td></tr>`;
+    }
   }
 }
 
@@ -223,43 +229,18 @@ function renderCampaignDetail(rows) {
   if (window.lucide) window.lucide.createIcons();
 }
 
-function subscribeToDetail(campaignName) {
-  if (detailRealtimeChannel) {
-    _supabase.removeChannel(detailRealtimeChannel);
-    detailRealtimeChannel = null;
+function startDetailPolling(campaignName) {
+  stopDetailPolling();
+  _detailPollInterval = setInterval(() => {
+    loadCampaignDetail(campaignName);
+  }, 8000);
+}
+
+function stopDetailPolling() {
+  if (_detailPollInterval) {
+    clearInterval(_detailPollInterval);
+    _detailPollInterval = null;
   }
-
-  detailRealtimeChannel = _supabase
-    .channel('campaignsdata-detail-' + slugify(campaignName))
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'campaignsdata',
-        filter: `campaign_name=eq.${campaignName}`
-      },
-      (payload) => {
-        console.log('Detail real-time update:', payload);
-        loadCampaignDetail(campaignName);
-      }
-    )
-    .subscribe();
-}
-
-// ── Utility ────────────────────────────────────────────────────
-function escapeHtml(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-function slugify(str) {
-  return String(str).toLowerCase().replace(/[^a-z0-9]/g, '-');
 }
 
 // ── Hook into existing initReport ─────────────────────────────
@@ -267,16 +248,18 @@ const _originalInitReport = window.initReport;
 window.initReport = function () {
   if (_originalInitReport) _originalInitReport();
   loadCampaignHistory();
-  subscribeToHistory();
+  startHistoryPolling();
 };
 
 // ── Cleanup on page leave ──────────────────────────────────────
 const _originalNavigateTo = window.navigateTo;
 window.navigateTo = function (page) {
-  if (page !== 'campaign-detail' && detailRealtimeChannel) {
-    _supabase.removeChannel(detailRealtimeChannel);
-    detailRealtimeChannel = null;
+  if (page !== 'campaign-detail') {
+    stopDetailPolling();
     currentDetailCampaign = null;
+  }
+  if (page !== 'report') {
+    stopHistoryPolling();
   }
   _originalNavigateTo(page);
 };
