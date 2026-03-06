@@ -189,7 +189,7 @@ async function openConfirmModal() {
   const errorMessage = document.getElementById('form-error-message');
   if (errorAlert) errorAlert.style.display = 'none';
 
-  // Show loading state on button
+  // Show loading state on button briefly just for feel
   const launchBtn = document.getElementById('launch-btn');
   const launchText = launchBtn?.querySelector('.launch-text');
   if (launchText) launchText.textContent = 'Launching…';
@@ -223,66 +223,55 @@ async function openConfirmModal() {
   }
   // ----------------------------------------------------------------
 
-  let successFlow = true;
-
-  try {
-    const response = await fetch(WEBHOOK_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-
-    // Attempt to parse JSON response
-    try {
-      const data = await response.json();
-      if (data && data.success === false) {
-        successFlow = false;
-        if (errorAlert && errorMessage) {
-          errorMessage.textContent = data.message || 'An error occurred while launching.';
-          errorAlert.style.display = 'flex';
-        }
-      }
-    } catch (e) {
-      // Ignored if response is not JSON
-    }
-  } catch (err) {
-    console.warn('Webhook delivery failed:', err);
-    // Don't block UX — still show modal
-  } finally {
-    if (launchText) launchText.textContent = 'Launch Campaign';
-    if (launchBtn) launchBtn.disabled = false;
+  // Instantly show the modal & restore button state
+  if (launchText) launchText.textContent = 'Launch Campaign';
+  if (launchBtn) launchBtn.disabled = false;
+  
+  const modal = document.getElementById('confirm-modal');
+  modal.classList.remove('hidden');
+  const path = modal.querySelector('.check-path');
+  if (path) {
+    path.style.animation = 'none';
+    void path.offsetWidth;
+    path.style.animation = '';
   }
 
-  // Update the table row based on result
-  const row = document.getElementById(tempId);
-  if (row) {
-    if (successFlow) {
-      const badge = row.querySelector('.status-badge');
-      if (badge) {
-        badge.innerHTML = 'Running';
-        badge.style.opacity = '1';
-        badge.style.animation = 'none';
+  // Fire webhook in background (Fire-and-forget style)
+  fetch(WEBHOOK_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  .then(response => response.json().catch(() => ({})))
+  .then(data => {
+    // If explicit error from n8n 
+    if (data && data.success === false) {
+      if (errorAlert && errorMessage) {
+        errorMessage.textContent = data.message || 'An error occurred while launching.';
+        errorAlert.style.display = 'flex';
       }
-      const sentCell = document.getElementById(tempId + '-sent');
-      if (sentCell) {
-        sentCell.textContent = '0'; // Real DB numbers logic later
-      }
+      // Remove the temp row if it failed
+      const row = document.getElementById(tempId);
+      if (row) row.remove();
     } else {
-      row.remove();
+      // Success case
+      const row = document.getElementById(tempId);
+      if (row) {
+        const badge = row.querySelector('.status-badge');
+        if (badge) {
+          badge.innerHTML = 'Running';
+          badge.style.opacity = '1';
+          badge.style.animation = 'none';
+        }
+        const sentCell = document.getElementById(tempId + '-sent');
+        if (sentCell) sentCell.textContent = '0';
+      }
     }
-  }
-
-  if (successFlow) {
-    // Show success modal
-    const modal = document.getElementById('confirm-modal');
-    modal.classList.remove('hidden');
-    const path = modal.querySelector('.check-path');
-    if (path) {
-      path.style.animation = 'none';
-      void path.offsetWidth;
-      path.style.animation = '';
-    }
-  }
+  })
+  .catch(err => {
+    console.warn('Webhook delivery failed:', err);
+    // Don't remove row on network error to avoid jarring UI, let poll correct it
+  });
 }
 function closeConfirmModal() {
   document.getElementById('confirm-modal').classList.add('hidden');
