@@ -250,9 +250,10 @@ function renderCampaignDetail(rows) {
 window.openEmailPreviewModal = function(btn) {
     const tpl = btn.nextElementSibling;
     if (!tpl) return;
-    const subject = tpl.querySelector('.mod-subject').innerHTML;
-    const body = tpl.querySelector('.mod-body').innerHTML;
-    const date = tpl.querySelector('.mod-date').innerHTML;
+    const content = tpl.content || tpl; // Fallback just in case
+    const subject = content.querySelector('.mod-subject').innerHTML;
+    const body = content.querySelector('.mod-body').innerHTML;
+    const date = content.querySelector('.mod-date').innerHTML;
 
     document.getElementById('preview-modal-subject').innerHTML = subject;
     document.getElementById('preview-modal-body').innerHTML = body;
