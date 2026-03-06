@@ -470,14 +470,14 @@
 
             <!-- EMAIL PREVIEW MODAL -->
             <div id="email-preview-modal" class="modal-backdrop hidden" onclick="closeEmailPreviewOnBackdrop(event)">
-                <div class="modal-box" id="email-preview-box" style="max-width: 600px; width: 90%; padding: 0; text-align: left; overflow: hidden; border-radius: var(--radius-lg);">
-                    <div style="background: var(--warm-stone); padding: 16px 24px; border-bottom: 1px solid var(--charcoal-08); display: flex; justify-content: space-between; align-items: center;">
+                <div class="modal-box" id="email-preview-box" style="max-width: 600px; width: 90%; max-height: 90vh; display: flex; flex-direction: column; padding: 0; text-align: left; overflow: hidden; border-radius: var(--radius-lg);">
+                    <div style="background: var(--warm-stone); padding: 16px 24px; border-bottom: 1px solid var(--charcoal-08); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
                         <span style="font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--slate);">Email Preview</span>
                         <button onclick="closeEmailPreviewModal()" style="background: transparent; border: none; cursor: pointer; color: var(--slate);">
                             <i data-lucide="x" width="18" height="18"></i>
                         </button>
                     </div>
-                    <div style="padding: 24px;">
+                    <div style="padding: 24px; overflow-y: auto; flex-grow: 1;">
                         <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--charcoal-08);">
                             <div style="font-size: 0.875rem; color: var(--charcoal);">
                                 <span style="color: var(--slate); font-weight: 500; min-width: 48px; display: inline-block;">From:</span> 
