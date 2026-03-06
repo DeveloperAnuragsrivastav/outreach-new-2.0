@@ -300,13 +300,20 @@ function autofillCampaignForm() {
   const fields = {
     'campaign-name': 'Q2 Enterprise SaaS Outbound',
     'campaign-goal': 'Book discovery calls',
+    'new-goal': 'Book 15 discovery calls for our new enterprise AI sales tool by the end of Q2.',
+    'new-product-name': 'CampaignBuddy Enterprise',
+    'new-value-proposition': 'We help modern sales teams automate outreach and boost reply rates by up to 3x using AI.',
     'icp-title': 'VP of Sales, Head of Growth, CRO',
+    'new-job-titles': 'VP of Sales, Chief Revenue Officer, Head of Growth',
     'icp-industry': 'SaaS, FinTech, B2B Software',
+    'new-industries': 'B2B SaaS, FinTech, Healthcare IT',
     'icp-size': '51–200 employees',
     'icp-geo': 'United States, Canada',
+    'new-competitor-displacement': 'Legacy outreach tools like Outreach.io or SalesLoft that take too much time to manage.',
     'sender-name': 'Alex Morgan',
     'sender-role': 'Head of Partnerships',
     'sender-email': 'alex@nexora.com',
+    'new-social-proof': 'We recently helped Acme Corp double their meeting booked rate in just 14 days.',
   };
   Object.entries(fields).forEach(([id, val]) => {
     const el = document.getElementById(id);
