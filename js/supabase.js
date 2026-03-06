@@ -212,22 +212,64 @@ function renderCampaignDetail(rows) {
   tbody.innerHTML = '';
   rows.forEach((row, idx) => {
     const tr = document.createElement('tr');
-    tr.className = 'table-row-anim';
+    tr.className = 'table-row-anim email-preview-item';
+    tr.style.display = 'block'; // Convert to blocks like .emails-list items
+    tr.style.marginBottom = '16px';
+    
+    // Store data purely for modal use
+    const safeSubject = escapeHtml(row.email_subject || '—');
+    const safeBody = escapeHtml(row.email_body || '');
+    const dateStr = formatDateTime(row.created_at);
+
     tr.innerHTML = `
-      <td style="color:#999;font-size:13px;">${idx + 1}</td>
-      <td class="email-subject-cell">
-        <span class="email-subject-text">${escapeHtml(row.email_subject || '—')}</span>
+      <td style="display: block; width: 100%; border: none; padding: 0;">
+          <div class="email-preview-meta">
+              <div class="ep-subject">${safeSubject}</div>
+              <div class="ep-date">${dateStr}</div>
+          </div>
+          <div class="ep-preview">${escapeHtml(truncate(row.email_body, 140))}</div>
+          <div style="margin-top: 12px;">
+              <button class="btn-open-detail" onclick="openEmailPreviewModal(this)" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.8125rem; font-weight: 500; color: var(--charcoal); background: var(--warm-stone); border: 1px solid var(--charcoal-08); padding: 6px 12px; border-radius: 100px; cursor: pointer; transition: background 0.2s;">
+                  <i data-lucide="eye" width="14" height="14"></i> Preview Email
+              </button>
+              <template class="modal-data-template">
+                  <div class="mod-subject">${safeSubject}</div>
+                  <div class="mod-body">${safeBody}</div>
+                  <div class="mod-date">${dateStr}</div>
+              </template>
+          </div>
       </td>
-      <td class="email-body-cell">
-        <span class="email-body-preview" title="${escapeHtml(row.email_body || '')}">${escapeHtml(truncate(row.email_body, 100))}</span>
-      </td>
-      <td class="sent-at-cell" style="white-space:nowrap;font-size:13px;color:#666;">${formatDateTime(row.created_at)}</td>
     `;
     tbody.appendChild(tr);
   });
 
   if (window.lucide) window.lucide.createIcons();
 }
+
+// ── Email Preview Modal Logic ──────────────────────────────────
+window.openEmailPreviewModal = function(btn) {
+    const tpl = btn.nextElementSibling;
+    if (!tpl) return;
+    const subject = tpl.querySelector('.mod-subject').innerHTML;
+    const body = tpl.querySelector('.mod-body').innerHTML;
+    const date = tpl.querySelector('.mod-date').innerHTML;
+
+    document.getElementById('preview-modal-subject').innerHTML = subject;
+    document.getElementById('preview-modal-body').innerHTML = body;
+    document.getElementById('preview-modal-date').innerHTML = date;
+
+    document.getElementById('email-preview-modal').classList.remove('hidden');
+};
+
+window.closeEmailPreviewModal = function() {
+    document.getElementById('email-preview-modal').classList.add('hidden');
+};
+
+window.closeEmailPreviewOnBackdrop = function(e) {
+    if (e.target === document.getElementById('email-preview-modal')) {
+        closeEmailPreviewModal();
+    }
+};
 
 function startDetailPolling(campaignName) {
   stopDetailPolling();
