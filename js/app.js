@@ -452,7 +452,7 @@ async function fetchAnalytics() {
   loading.style.display = 'block';
 
   try {
-    const response = await fetch('https://n8n.gignaati.com/webhook-test/sendgrid', {
+    const response = await fetch('https://n8n.gignaati.com/webhook/sendgrid', {
       method: 'GET',
       headers: { 'Accept': 'application/json' }
     });
