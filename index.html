@@ -59,7 +59,31 @@
     </div> -->
 
     <!-- ============================================================
-     AUTHENTICATED SHELL (Sidebar + Topbar + Pages 2-5)
+     TEMPTORARY ADMIN AUTH SCREEN
+     ============================================================ -->
+    <div id="page-admin-login" class="page" style="display: none; align-items: center; justify-content: center; height: 100vh; background: var(--warm-stone);">
+        <div style="background: var(--white); padding: 48px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); max-width: 400px; width: 100%;">
+            <div style="text-align: center; margin-bottom: 32px;">
+                <h2 style="font-family: var(--font-serif); font-size: 1.75rem; color: var(--charcoal); margin-bottom: 8px;">Admin Login</h2>
+                <p style="font-size: 0.875rem; color: var(--slate);">Strictly for testing. Requires 10s rolling password.</p>
+            </div>
+            <form onsubmit="handleAdminLogin(event)">
+                <div class="form-field" style="margin-bottom: 20px;">
+                    <label for="admin-username">Username</label>
+                    <input type="text" id="admin-username" required />
+                </div>
+                <div class="form-field" style="margin-bottom: 24px;">
+                    <label for="admin-password">Password</label>
+                    <input type="password" id="admin-password" required />
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%; border-radius: 100px;">Sign In</button>
+            </form>
+            <div id="admin-error" style="display: none; color: #e74c3c; font-size: 0.875rem; text-align: center; margin-top: 16px;"></div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+     AUTHENTICATED SHELL (Sidebar + Topbar + Pages ...)
      ============================================================ -->
     <div id="app-shell" class="page active" style="display: flex;">
 
@@ -501,6 +525,7 @@
         </div>
     </div>
 
+    <script src="js/auth.js"></script>
     <script src="js/app.js"></script>
     <script src="js/animations.js"></script>
     <script src="js/supabase.js"></script>

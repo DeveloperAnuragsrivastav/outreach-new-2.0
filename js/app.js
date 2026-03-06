@@ -2,11 +2,32 @@
    CAMPAIGNBUDDY — APP ROUTER & INTERACTIONS
    ============================================================ */
 
-// ── Current state ─────────────────────────────────────────────
-let currentPage = 'new-campaign';
+// ── Init & State ───────────────────────────────────────────────
 let sidebarCollapsed = false;
 
-// ── Loading bar ────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', initApp);
+
+function initApp() {
+  if (typeof window.checkAdminAuth === 'function' && !window.checkAdminAuth()) {
+    // Show login, hide shell immediately
+    const shell = document.getElementById('app-shell');
+    if (shell) {
+      shell.style.display = 'none';
+      shell.classList.remove('active');
+    }
+    const login = document.getElementById('page-admin-login');
+    if (login) {
+      login.style.display = 'flex';
+    }
+    finishLoading();
+    return;
+  }
+
+  // Already logged in, proceed to default 'new-campaign'
+  navigateTo('new-campaign');
+}
+
+// ── Shared functions ────────────────────────────────────────────────
 function startLoading() {
   const bar = document.getElementById('page-loading-bar');
   bar.style.width = '0';
