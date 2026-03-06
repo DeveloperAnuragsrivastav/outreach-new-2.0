@@ -17,6 +17,30 @@
     <link rel="stylesheet" href="styles/pages.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
     <script src="https://unpkg.com/lucide@latest" defer></script>
+    <style>
+        .form-field textarea {
+            width: 100%;
+            height: auto;
+            min-height: 48px;
+            padding: 12px 16px;
+            background: var(--white);
+            border: 1px solid var(--charcoal-20);
+            border-radius: var(--radius-sm);
+            font-size: 0.9375rem;
+            color: var(--charcoal);
+            outline: none;
+            transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
+            resize: vertical;
+            font-family: inherit;
+        }
+        .form-field textarea:focus {
+            border-color: var(--charcoal);
+            box-shadow: 0 0 0 3px rgba(10, 10, 10, 0.08);
+        }
+        .form-field textarea::placeholder {
+            color: var(--charcoal-40);
+        }
+    </style>
 </head>
 
 <body>
@@ -147,6 +171,18 @@
                                     <option>Nurture existing contacts</option>
                                 </select>
                             </div>
+                            <div class="form-field">
+                                <label for="new-goal">Goal</label>
+                                <textarea id="new-goal" placeholder="Detailed goal description..." rows="3" oninput="updatePreview()"></textarea>
+                            </div>
+                            <div class="form-field">
+                                <label for="new-product-name">Product Name</label>
+                                <input type="text" id="new-product-name" placeholder="Product name" oninput="updatePreview()" />
+                            </div>
+                            <div class="form-field">
+                                <label for="new-value-proposition">Value Proposition</label>
+                                <textarea id="new-value-proposition" placeholder="Describe the value proposition..." rows="3" oninput="updatePreview()"></textarea>
+                            </div>
                         </div>
 
                         <!-- Section: Target Audience -->
@@ -179,6 +215,18 @@
                                 <input type="text" id="icp-geo" placeholder="e.g. United States, Europe"
                                     oninput="updatePreview()" />
                             </div>
+                            <div class="form-field">
+                                <label for="new-industries">Target Industries</label>
+                                <input type="text" id="new-industries" placeholder="e.g. SaaS, FinTech, Healthcare" oninput="updatePreview()" />
+                            </div>
+                            <div class="form-field">
+                                <label for="new-job-titles">Target Job Titles</label>
+                                <input type="text" id="new-job-titles" placeholder="e.g. VP of Sales, Head of Growth" oninput="updatePreview()" />
+                            </div>
+                            <div class="form-field">
+                                <label for="new-competitor-displacement">Competitor / Displacement Targets</label>
+                                <textarea id="new-competitor-displacement" placeholder="List competitors..." rows="3" oninput="updatePreview()"></textarea>
+                            </div>
                         </div>
 
                         <!-- Section: Sender Identity -->
@@ -201,6 +249,10 @@
                                 <label for="sender-email">Sending Email</label>
                                 <input type="email" id="sender-email" placeholder="alex@yourcompany.com"
                                     oninput="updatePreview()" />
+                            </div>
+                            <div class="form-field">
+                                <label for="new-social-proof">Social Proof</label>
+                                <textarea id="new-social-proof" placeholder="Enter social proof, stats, or case studies..." rows="3" oninput="updatePreview()"></textarea>
                             </div>
                         </div>
 

@@ -167,9 +167,9 @@ async function openConfirmModal() {
   // Collect all form data
   const payload = {
     campaign_name: name,
-    goal: document.getElementById('campaign-goal')?.value || '',
-    job_titles: document.getElementById('icp-title')?.value || '',
-    industries: document.getElementById('icp-industry')?.value || '',
+    goal: document.getElementById('new-goal')?.value || document.getElementById('campaign-goal')?.value || '',
+    job_titles: document.getElementById('new-job-titles')?.value || document.getElementById('icp-title')?.value || '',
+    industries: document.getElementById('new-industries')?.value || document.getElementById('icp-industry')?.value || '',
     company_size: document.getElementById('icp-size')?.value || '',
     geography: document.getElementById('icp-geo')?.value || '',
     sender_name: document.getElementById('sender-name')?.value || '',
@@ -177,6 +177,10 @@ async function openConfirmModal() {
     sender_email: document.getElementById('sender-email')?.value || '',
     prospects: document.getElementById('campaign-scale')?.value || '250',
     launched_at: new Date().toISOString(),
+    product_name: document.getElementById('new-product-name')?.value || '',
+    value_proposition: document.getElementById('new-value-proposition')?.value || '',
+    competitor_displacement: document.getElementById('new-competitor-displacement')?.value || '',
+    social_proof: document.getElementById('new-social-proof')?.value || ''
   };
 
   // Hide previous error if any
