@@ -421,6 +421,97 @@ function initIcons() {
   if (window.lucide) window.lucide.createIcons();
 }
 
+// ── Analytics (Webhook Fetch) ──────────────────────────────────
+async function fetchAnalytics() {
+  const btn = document.getElementById('fetch-analytics-btn');
+  const errorBox = document.getElementById('analytics-error');
+  const errorMsg = document.getElementById('analytics-error-message');
+  const loading = document.getElementById('analytics-loading');
+  const empty = document.getElementById('analytics-empty');
+  const results = document.getElementById('analytics-results');
+
+  // Reset UI
+  btn.disabled = true;
+  btn.textContent = 'Fetching...';
+  errorBox.style.display = 'none';
+  empty.style.display = 'none';
+  results.style.display = 'none';
+  loading.style.display = 'block';
+
+  try {
+    const response = await fetch('https://n8n.gignaati.com/webhook-test/sendgrid', {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (!response.ok) {
+      // Check if it's JSON error or text
+      let errMsg = `Server returned status ${response.status}`;
+      try {
+        const errorData = await response.json();
+        if (errorData.message) errMsg = errorData.message;
+      } catch (e) {
+          // not json
+      }
+      throw new Error(errMsg);
+    }
+
+    const data = await response.json();
+    
+    // Aggregate global stats from array
+    let totalStats = {
+      delivered: 0,
+      opens: 0,
+      clicks: 0,
+      bounces: 0,
+      spam_reports: 0,
+      unsubscribes: 0,
+      blocks: 0
+    };
+
+    if (Array.isArray(data)) {
+      data.forEach(day => {
+        if (day.stats && Array.isArray(day.stats)) {
+          day.stats.forEach(stat => {
+            if (stat.metrics) {
+              totalStats.delivered += stat.metrics.delivered || 0;
+              totalStats.opens += stat.metrics.opens || 0;
+              totalStats.clicks += stat.metrics.clicks || 0;
+              totalStats.bounces += stat.metrics.bounces || 0;
+              totalStats.spam_reports += stat.metrics.spam_reports || 0;
+              totalStats.unsubscribes += stat.metrics.unsubscribes || 0;
+              totalStats.blocks += stat.metrics.blocks || 0;
+            }
+          });
+        }
+      });
+    } else {
+        throw new Error('Unexpected data format received.');
+    }
+
+    // Assign to UI
+    document.getElementById('stat-delivered').textContent = totalStats.delivered.toLocaleString();
+    document.getElementById('stat-opens').textContent = totalStats.opens.toLocaleString();
+    document.getElementById('stat-clicks').textContent = totalStats.clicks.toLocaleString();
+    document.getElementById('stat-bounces').textContent = totalStats.bounces.toLocaleString();
+    document.getElementById('stat-spam').textContent = totalStats.spam_reports.toLocaleString();
+    document.getElementById('stat-unsubscribes').textContent = totalStats.unsubscribes.toLocaleString();
+    document.getElementById('stat-blocks').textContent = totalStats.blocks.toLocaleString();
+
+    loading.style.display = 'none';
+    results.style.display = 'block';
+
+  } catch (error) {
+    loading.style.display = 'none';
+    errorBox.style.display = 'flex';
+    errorMsg.textContent = error.message;
+    empty.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Fetch Data';
+  }
+}
+
 // ── Boot ───────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   initIcons();

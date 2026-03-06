@@ -76,6 +76,12 @@
                     <span class="nav-label">Reports</span>
                     <span class="nav-active-bar"></span>
                 </a>
+                <a href="#" class="sidebar-nav-item" data-page="analytics"
+                    onclick="navigateTo('analytics')">
+                    <span class="nav-icon"><i data-lucide="pie-chart" width="18" height="18"></i></span>
+                    <span class="nav-label">Analytics</span>
+                    <span class="nav-active-bar"></span>
+                </a>
                 <a href="#" class="sidebar-nav-item" data-page="campaign-detail" id="nav-campaign-detail" style="display:none">
                     <span class="nav-icon"><i data-lucide="mail" width="18" height="18"></i></span>
                     <span class="nav-label">Campaign Detail</span>
@@ -311,6 +317,72 @@
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE 7: ANALYTICS -->
+            <div id="page-analytics" class="inner-page">
+                <div class="report-header">
+                    <div class="report-title-row">
+                        <div>
+                            <h1 class="report-title">SendGrid Analytics</h1>
+                            <div class="report-title-underline"></div>
+                        </div>
+                        <button class="btn-primary" id="fetch-analytics-btn" onclick="fetchAnalytics()" style="padding: 10px 20px; font-weight: 600;">
+                            Fetch Data
+                        </button>
+                    </div>
+                </div>
+
+                <div class="analytics-content scroll-reveal" style="padding: 32px; display: flex; flex-direction: column; gap: 24px;">
+                    <div id="analytics-error" class="toast error hidden" style="position: static; width: 100%; transform: none; animation: none; opacity: 1; display: none;">
+                        <span class="toast-icon" style="color: var(--danger);">✕</span>
+                        <div class="toast-body">
+                            <div class="toast-title" style="color: var(--danger);">Error</div>
+                            <div class="toast-message" id="analytics-error-message">Could not fetch data.</div>
+                        </div>
+                    </div>
+
+                    <div id="analytics-loading" style="text-align: center; padding: 40px; color: var(--slate); display: none;">
+                        Fetching SendGrid stats...
+                    </div>
+
+                    <div id="analytics-empty" style="text-align: center; padding: 40px; color: var(--slate);">
+                        Click "Fetch Data" to pull the latest stats from SendGrid.
+                    </div>
+
+                    <div id="analytics-results" style="display: none;">
+                        <div class="charts-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                            <div class="chart-card" style="padding: 20px; text-align: center;">
+                                <div class="preview-stat-label">Delivered</div>
+                                <div class="preview-stat-value" id="stat-delivered" style="margin-top: 12px;">0</div>
+                            </div>
+                            <div class="chart-card" style="padding: 20px; text-align: center;">
+                                <div class="preview-stat-label">Opens</div>
+                                <div class="preview-stat-value" id="stat-opens" style="margin-top: 12px;">0</div>
+                            </div>
+                            <div class="chart-card" style="padding: 20px; text-align: center;">
+                                <div class="preview-stat-label">Clicks</div>
+                                <div class="preview-stat-value" id="stat-clicks" style="margin-top: 12px;">0</div>
+                            </div>
+                            <div class="chart-card" style="padding: 20px; text-align: center;">
+                                <div class="preview-stat-label">Bounces</div>
+                                <div class="preview-stat-value" id="stat-bounces" style="margin-top: 12px;">0</div>
+                            </div>
+                            <div class="chart-card" style="padding: 20px; text-align: center;">
+                                <div class="preview-stat-label">Spam Reports</div>
+                                <div class="preview-stat-value" id="stat-spam" style="margin-top: 12px;">0</div>
+                            </div>
+                            <div class="chart-card" style="padding: 20px; text-align: center;">
+                                <div class="preview-stat-label">Unsubscribes</div>
+                                <div class="preview-stat-value" id="stat-unsubscribes" style="margin-top: 12px;">0</div>
+                            </div>
+                             <div class="chart-card" style="padding: 20px; text-align: center;">
+                                <div class="preview-stat-label">Blocks</div>
+                                <div class="preview-stat-value" id="stat-blocks" style="margin-top: 12px;">0</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
