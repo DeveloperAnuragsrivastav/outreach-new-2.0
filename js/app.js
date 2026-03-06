@@ -180,7 +180,8 @@ async function openConfirmModal() {
     product_name: document.getElementById('new-product-name')?.value || '',
     value_proposition: document.getElementById('new-value-proposition')?.value || '',
     competitor_displacement: document.getElementById('new-competitor-displacement')?.value || '',
-    social_proof: document.getElementById('new-social-proof')?.value || ''
+    social_proof: document.getElementById('new-social-proof')?.value || '',
+    cta_link: document.getElementById('new-cta-link')?.value || ''
   };
 
   // Hide previous error if any
@@ -314,6 +315,7 @@ function autofillCampaignForm() {
     'sender-role': 'Head of Partnerships',
     'sender-email': 'alex@nexora.com',
     'new-social-proof': 'We recently helped Acme Corp double their meeting booked rate in just 14 days.',
+    'new-cta-link': 'https://nexora.com/demo',
   };
   Object.entries(fields).forEach(([id, val]) => {
     const el = document.getElementById(id);
