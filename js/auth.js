@@ -6,22 +6,23 @@ let currentAdminPassword = '';
 const SESSION_DURATION_MS = 30 * 60 * 1000; // 30 minutes
 
 function generateRandomPassword() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I, 1, O, 0 for readability
-  let pass = 'TempPass-';
-  for (let i = 0; i < 5; i++) {
-    pass += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return pass;
+  // Generate a random 2-digit string
+  // It could be any two digits (e.g., "05", "42", "99") or identical digits if preferred.
+  // The user suggested "11 22 44", so I'll just generate identical digits (11 to 99) for simplicity,
+  // or just any 2-digit random number padded with 0. 
+  // "like 11 22 44" implies repeated digits might be easier to look at. Let's do repeated digits for fun, or just a random number 10-99.
+  // Actually, any random 2 digits is fine. Let's return a random number between 10 and 99.
+  return Math.floor(Math.random() * 90 + 10).toString();
 }
 
 function rotatePassword() {
   currentAdminPassword = generateRandomPassword();
-  console.log(`%c[ADMIN AUTH] Current Valid Password (expires in 10s): %c${currentAdminPassword}`, 'color: #3498db; font-weight: bold;', 'color: #e74c3c; font-weight: bold; font-size: 14px;');
+  console.log(`%c[ADMIN AUTH] Current Valid Password (expires in 30s): %c${currentAdminPassword}`, 'color: #3498db; font-weight: bold;', 'color: #e74c3c; font-weight: bold; font-size: 14px;');
 }
 
 // Start rotation
 rotatePassword();
-setInterval(rotatePassword, 10000);
+setInterval(rotatePassword, 30000);
 
 // Global Login Handler
 window.handleAdminLogin = function(e) {
