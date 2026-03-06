@@ -154,7 +154,7 @@ function moveSettingsIndicator(btn) {
 }
 
 // ── Confirmation modal ─────────────────────────────────────────
-const WEBHOOK_URL = 'https://n8n.gignaati.com/webhook-test/Outreach_Campaign';
+const WEBHOOK_URL = 'https://n8n.gignaati.com/webhook/Outreach_Campaign';
 
 async function openConfirmModal() {
   const name = document.getElementById('campaign-name').value.trim();
