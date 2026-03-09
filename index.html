@@ -118,6 +118,12 @@
                     <span class="nav-label">New Campaign</span>
                     <span class="nav-active-bar"></span>
                 </a>
+                <a href="#" class="sidebar-nav-item" data-page="campaign-list"
+                    onclick="navigateTo('campaign-list')">
+                    <span class="nav-icon"><i data-lucide="list" width="18" height="18"></i></span>
+                    <span class="nav-label">Campaign List</span>
+                    <span class="nav-active-bar"></span>
+                </a>
                 <a href="#" class="sidebar-nav-item" data-page="campaign-report"
                     onclick="navigateTo('campaign-report')">
                     <span class="nav-icon"><i data-lucide="bar-chart-2" width="18" height="18"></i></span>
@@ -472,6 +478,133 @@
             <!-- PAGE 5: SETTINGS (Commented Out) -->
 
 
+            <!-- PAGE 7: CAMPAIGN LIST -->
+            <div id="page-campaign-list" class="inner-page">
+                <div class="report-header">
+                    <div class="report-header-top">
+                        <a href="#" class="breadcrumb-back" onclick="navigateTo('new-campaign')">
+                            <span class="back-arrow"><i data-lucide="arrow-left" width="16" height="16"></i></span>
+                            New Campaign
+                        </a>
+                    </div>
+                    <div class="report-title-row">
+                        <div>
+                            <h1 class="report-title">Campaign List</h1>
+                            <div class="report-title-underline"></div>
+                        </div>
+                        <div class="realtime-indicator connected" id="list-realtime-indicator">
+                            <span class="realtime-dot"></span>
+                            <span class="realtime-label">Live</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-section scroll-reveal" style="margin-top: 24px;">
+                    <div class="table-wrap">
+                        <table class="campaign-table">
+                            <thead>
+                                <tr>
+                                    <th>Campaign Name</th>
+                                    <th>Goal</th>
+                                    <th>Sender</th>
+                                    <th>Prospects</th>
+                                    <th>Launched</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="campaign-list-tbody">
+                                <tr>
+                                    <td colspan="6" style="text-align:center; padding: 32px; color: #999;">
+                                        Loading campaigns...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EDIT CAMPAIGN MODAL -->
+            <div id="edit-campaign-modal" class="modal-backdrop hidden" onclick="closeEditModalOnBackdrop(event)">
+                <div class="modal-box" style="max-width: 560px; padding: 32px;">
+                    <h2 class="modal-title" style="margin-bottom: 20px;">Edit Campaign</h2>
+                    <input type="hidden" id="edit-campaign-id" />
+                    <div class="form-field" style="margin-bottom: 14px;">
+                        <label for="edit-campaign-name">Campaign Name</label>
+                        <input type="text" id="edit-campaign-name" placeholder="Campaign Name" />
+                    </div>
+                    <div class="form-field" style="margin-bottom: 14px;">
+                        <label for="edit-campaign-goal">Goal</label>
+                        <select id="edit-campaign-goal">
+                            <option value="">Select a goal</option>
+                            <option>Book discovery calls</option>
+                            <option>Generate warm leads</option>
+                            <option>Drive demo signups</option>
+                            <option>Nurture existing contacts</option>
+                        </select>
+                    </div>
+                    <div class="form-field" style="margin-bottom: 14px;">
+                        <label for="edit-job-titles">Job Titles</label>
+                        <input type="text" id="edit-job-titles" placeholder="VP of Sales, CRO" />
+                    </div>
+                    <div class="form-field" style="margin-bottom: 14px;">
+                        <label for="edit-industries">Industries</label>
+                        <input type="text" id="edit-industries" placeholder="SaaS, FinTech" />
+                    </div>
+                    <div class="form-field" style="margin-bottom: 14px;">
+                        <label for="edit-company-size">Company Size</label>
+                        <select id="edit-company-size">
+                            <option value="">Any size</option>
+                            <option>1–10 employees</option>
+                            <option>11–50 employees</option>
+                            <option>51–200 employees</option>
+                            <option>201–1000 employees</option>
+                            <option>1000+ employees</option>
+                        </select>
+                    </div>
+                    <div class="form-field" style="margin-bottom: 14px;">
+                        <label for="edit-geography">Geography</label>
+                        <input type="text" id="edit-geography" placeholder="United States" />
+                    </div>
+                    <div style="display:flex;gap:10px;margin-bottom:14px;">
+                        <div class="form-field" style="flex:1;">
+                            <label for="edit-sender-name">Sender Name</label>
+                            <input type="text" id="edit-sender-name" placeholder="Alex Morgan" />
+                        </div>
+                        <div class="form-field" style="flex:1;">
+                            <label for="edit-sender-role">Role</label>
+                            <input type="text" id="edit-sender-role" placeholder="Head of Partnerships" />
+                        </div>
+                    </div>
+                    <div class="form-field" style="margin-bottom: 14px;">
+                        <label for="edit-sender-email">Sender Email</label>
+                        <input type="email" id="edit-sender-email" placeholder="alex@company.com" />
+                    </div>
+                    <div class="form-field" style="margin-bottom: 20px;">
+                        <label for="edit-prospects">Prospects</label>
+                        <input type="number" id="edit-prospects" placeholder="250" min="1" />
+                    </div>
+                    <div class="modal-actions" style="justify-content:flex-end;gap:12px;">
+                        <button class="btn-secondary" onclick="closeEditModal()" style="padding:10px 24px;border:1px solid #ddd;background:#fff;border-radius:8px;cursor:pointer;">Cancel</button>
+                        <button class="btn-primary" onclick="saveEditCampaign()" style="padding:10px 24px;">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DELETE CONFIRM MODAL -->
+            <div id="delete-campaign-modal" class="modal-backdrop hidden" onclick="closeDeleteModalOnBackdrop(event)">
+                <div class="modal-box" style="max-width: 420px; padding: 32px; text-align: center;">
+                    <div style="font-size: 48px; margin-bottom: 12px;">⚠</div>
+                    <h2 class="modal-title" style="margin-bottom: 8px;">Delete Campaign?</h2>
+                    <p class="modal-body" id="delete-campaign-msg" style="margin-bottom: 24px;">This action cannot be undone.</p>
+                    <input type="hidden" id="delete-campaign-id" />
+                    <div class="modal-actions" style="justify-content:center;gap:12px;">
+                        <button class="btn-secondary" onclick="closeDeleteModal()" style="padding:10px 24px;border:1px solid #ddd;background:#fff;border-radius:8px;cursor:pointer;">Cancel</button>
+                        <button class="btn-primary" onclick="confirmDeleteCampaign()" style="padding:10px 24px;background:#e74c3c;border-color:#e74c3c;">Delete</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- CONFIRMATION MODAL -->
             <div id="confirm-modal" class="modal-backdrop hidden" onclick="closeModalOnBackdrop(event)">
                 <div class="modal-box" id="modal-box">
@@ -529,6 +662,7 @@
     <script src="js/app.js"></script>
     <script src="js/animations.js"></script>
     <script src="js/supabase.js"></script>
+    <script src="js/campaign-list.js"></script>
 </body>
 
 </html>
