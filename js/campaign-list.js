@@ -1,107 +1,102 @@
 /* ============================================================
-   CAMPAIGNBUDDY — CAMPAIGN LIST PAGE
-   Shows all campaigns from DB with Edit, Delete, Re-run
+   CAMPAIGNBUDDY — CAMPAIGN LIST PAGE (Universal)
+   Direct Supabase REST API calls for CRUD — no server needed
    ============================================================ */
 
-let _listPollInterval = null;
+var _listPollInterval = null;
+var _campaignCache = [];
 
-// ── Load Campaign List ────────────────────────────────────────
+// ── Load Campaign List ───────────────────────────────────────
 async function loadCampaignList() {
-  const tbody = document.getElementById('campaign-list-tbody');
+  var tbody = document.getElementById('campaign-list-tbody');
   if (!tbody) return;
 
   if (!tbody.dataset.loaded) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:#999;">Loading campaigns...</td></tr>`;
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:#999;">Loading campaigns...</td></tr>';
   }
 
   try {
-    const res = await fetch('/api/campaign-list');
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || `HTTP ${res.status}`);
-    }
-    const data = await res.json();
-    renderCampaignList(data || []);
+    var data = await supabaseRest(
+      'campaigns?select=id,campaign_name,goal,sender_name,sender_email,sender_role,job_titles,industries,company_size,geography,prospects,launched_at,created_at,product_name,value_proposition,competitor_displacement,social_proof,cta_link&order=created_at.desc'
+    );
+    _campaignCache = data || [];
+    renderCampaignList(_campaignCache);
     tbody.dataset.loaded = 'true';
   } catch (err) {
     console.error('Error loading campaign list:', err);
     if (!tbody.dataset.loaded) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:#e74c3c;">Failed to load campaigns.</td></tr>`;
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:#e74c3c;">Failed to load campaigns.</td></tr>';
     }
   }
 }
 
-// ── Render Campaign List Table ────────────────────────────────
+// ── Render Campaign List Table ───────────────────────────────
 function renderCampaignList(campaigns) {
-  const tbody = document.getElementById('campaign-list-tbody');
+  var tbody = document.getElementById('campaign-list-tbody');
   if (!tbody) return;
 
   if (!campaigns || campaigns.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:#999;">No campaigns found. Create one from "New Campaign".</td></tr>`;
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:#999;">No campaigns found. Create one from "New Campaign".</td></tr>';
     return;
   }
 
   tbody.innerHTML = '';
-  campaigns.forEach(c => {
-    const tr = document.createElement('tr');
+  campaigns.forEach(function (c) {
+    var tr = document.createElement('tr');
     tr.className = 'table-row-anim';
     tr.dataset.id = c.id;
-    tr.innerHTML = `
-      <td class="campaign-name-cell">
-        <span class="campaign-name">${escapeHtml(c.campaign_name || '—')}</span>
-        <span class="campaign-date">${formatDate(c.created_at)}</span>
-      </td>
-      <td style="font-size:13px;color:#555;">${escapeHtml(c.goal || '—')}</td>
-      <td style="font-size:13px;">
-        <span style="color:#333;">${escapeHtml(c.sender_name || '—')}</span>
-        <br><span style="color:#888;font-size:12px;">${escapeHtml(c.sender_email || '')}</span>
-      </td>
-      <td style="font-weight:600;">${c.prospects ? c.prospects.toLocaleString() : '—'}</td>
-      <td style="font-size:13px;color:#666;">${formatDate(c.launched_at)}</td>
-      <td class="actions-cell-list">
-        <div class="campaign-actions-row">
-          <button class="action-btn action-btn-edit" title="Edit" onclick="openEditCampaign(${c.id})">
-            <i data-lucide="pencil" width="14" height="14"></i>
-          </button>
-          <button class="action-btn action-btn-rerun" title="Re-run" onclick="rerunCampaign(${c.id}, '${escapeHtml(c.campaign_name || '').replace(/'/g, "\\'")}')">
-            <i data-lucide="refresh-cw" width="14" height="14"></i>
-          </button>
-          <button class="action-btn action-btn-delete" title="Delete" onclick="openDeleteCampaign(${c.id}, '${escapeHtml(c.campaign_name || '').replace(/'/g, "\\'")}')">
-            <i data-lucide="trash-2" width="14" height="14"></i>
-          </button>
-        </div>
-      </td>
-    `;
+    tr.innerHTML =
+      '<td class="campaign-name-cell">' +
+        '<span class="campaign-name">' + escapeHtml(c.campaign_name || '—') + '</span>' +
+        '<span class="campaign-date">' + formatDate(c.created_at) + '</span>' +
+      '</td>' +
+      '<td style="font-size:13px;color:#555;">' + escapeHtml(c.goal || '—') + '</td>' +
+      '<td style="font-size:13px;">' +
+        '<span style="color:#333;">' + escapeHtml(c.sender_name || '—') + '</span>' +
+        '<br><span style="color:#888;font-size:12px;">' + escapeHtml(c.sender_email || '') + '</span>' +
+      '</td>' +
+      '<td style="font-weight:600;">' + (c.prospects ? c.prospects.toLocaleString() : '—') + '</td>' +
+      '<td style="font-size:13px;color:#666;">' + formatDate(c.launched_at) + '</td>' +
+      '<td class="actions-cell-list">' +
+        '<div class="campaign-actions-row">' +
+          '<button class="action-btn action-btn-edit" title="Edit" onclick="openEditCampaign(' + c.id + ')">' +
+            '<i data-lucide="pencil" width="14" height="14"></i>' +
+          '</button>' +
+          '<button class="action-btn action-btn-rerun" title="Re-run" onclick="rerunCampaign(' + c.id + ', \'' + escapeHtml(c.campaign_name || '').replace(/'/g, "\\'") + '\')">' +
+            '<i data-lucide="refresh-cw" width="14" height="14"></i>' +
+          '</button>' +
+          '<button class="action-btn action-btn-delete" title="Delete" onclick="openDeleteCampaign(' + c.id + ', \'' + escapeHtml(c.campaign_name || '').replace(/'/g, "\\'") + '\')">' +
+            '<i data-lucide="trash-2" width="14" height="14"></i>' +
+          '</button>' +
+        '</div>' +
+      '</td>';
     tbody.appendChild(tr);
   });
 
   if (window.lucide) window.lucide.createIcons();
 }
 
-// ── Polling ───────────────────────────────────────────────────
+// ── Polling ──────────────────────────────────────────────────
 function startListPolling() {
   stopListPolling();
-  _listPollInterval = setInterval(() => loadCampaignList(), 8000);
+  _listPollInterval = setInterval(function () { loadCampaignList(); }, 8000);
 }
 
 function stopListPolling() {
-  if (_listPollInterval) {
-    clearInterval(_listPollInterval);
-    _listPollInterval = null;
-  }
+  if (_listPollInterval) { clearInterval(_listPollInterval); _listPollInterval = null; }
 }
 
-// ── Edit Campaign ─────────────────────────────────────────────
-let _campaignCache = [];
-
+// ── Edit Campaign ────────────────────────────────────────────
 async function openEditCampaign(id) {
-  // Fetch fresh data
+  // Refresh cache
   try {
-    const res = await fetch('/api/campaign-list');
-    if (res.ok) _campaignCache = await res.json();
+    var data = await supabaseRest(
+      'campaigns?select=*&order=created_at.desc'
+    );
+    if (data) _campaignCache = data;
   } catch (e) { /* use cached */ }
 
-  const campaign = _campaignCache.find(c => c.id === id);
+  var campaign = _campaignCache.find(function (c) { return c.id === id; });
   if (!campaign) {
     showToast('Campaign not found.', 'error');
     return;
@@ -131,10 +126,10 @@ function closeEditModalOnBackdrop(e) {
 }
 
 async function saveEditCampaign() {
-  const id = document.getElementById('edit-campaign-id').value;
+  var id = document.getElementById('edit-campaign-id').value;
   if (!id) return;
 
-  const payload = {
+  var payload = {
     campaign_name: document.getElementById('edit-campaign-name').value.trim(),
     goal: document.getElementById('edit-campaign-goal').value,
     job_titles: document.getElementById('edit-job-titles').value.trim(),
@@ -153,16 +148,11 @@ async function saveEditCampaign() {
   }
 
   try {
-    const res = await fetch(`/api/campaign-update?id=${id}`, {
+    await supabaseRest('campaigns?id=eq.' + id, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: payload,
+      extraHeaders: { 'Prefer': 'return=representation' },
     });
-
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || `HTTP ${res.status}`);
-    }
 
     closeEditModal();
     showToast('Campaign updated successfully!', 'success');
@@ -173,10 +163,10 @@ async function saveEditCampaign() {
   }
 }
 
-// ── Delete Campaign ───────────────────────────────────────────
+// ── Delete Campaign ──────────────────────────────────────────
 function openDeleteCampaign(id, name) {
   document.getElementById('delete-campaign-id').value = id;
-  document.getElementById('delete-campaign-msg').textContent = `Are you sure you want to delete "${name}"? This action cannot be undone.`;
+  document.getElementById('delete-campaign-msg').textContent = 'Are you sure you want to delete "' + name + '"? This action cannot be undone.';
   document.getElementById('delete-campaign-modal').classList.remove('hidden');
 }
 
@@ -189,18 +179,13 @@ function closeDeleteModalOnBackdrop(e) {
 }
 
 async function confirmDeleteCampaign() {
-  const id = document.getElementById('delete-campaign-id').value;
+  var id = document.getElementById('delete-campaign-id').value;
   if (!id) return;
 
   try {
-    const res = await fetch(`/api/campaign-delete?id=${id}`, {
+    await supabaseRest('campaigns?id=eq.' + id, {
       method: 'DELETE',
     });
-
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || `HTTP ${res.status}`);
-    }
 
     closeDeleteModal();
     showToast('Campaign deleted.', 'success');
@@ -211,24 +196,53 @@ async function confirmDeleteCampaign() {
   }
 }
 
-// ── Re-run Campaign ───────────────────────────────────────────
+// ── Re-run Campaign ──────────────────────────────────────────
 async function rerunCampaign(id, name) {
-  if (!confirm(`Re-run campaign "${name}"? This will re-launch it with the same settings.`)) return;
+  if (!confirm('Re-run campaign "' + name + '"? This will re-launch it with the same settings.')) return;
 
-  showToast(`Re-running "${name}"...`, 'info');
+  showToast('Re-running "' + name + '"...', 'info');
 
   try {
-    const res = await fetch(`/api/campaign-rerun?id=${id}`, {
+    // Fetch campaign data
+    var data = await supabaseRest('campaigns?id=eq.' + id + '&select=*');
+    if (!data || data.length === 0) throw new Error('Campaign not found');
+
+    var campaign = data[0];
+
+    // Send to n8n webhook (same as original launch)
+    var webhookUrl = 'https://n8n-1-yvtq.onrender.com/webhook/outreach';
+    var webhookRes = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        campaign_name: campaign.campaign_name,
+        goal: campaign.goal,
+        job_titles: campaign.job_titles,
+        industries: campaign.industries,
+        company_size: campaign.company_size,
+        geography: campaign.geography,
+        sender_name: campaign.sender_name,
+        sender_role: campaign.sender_role,
+        sender_email: campaign.sender_email,
+        prospects: campaign.prospects,
+        product_name: campaign.product_name,
+        value_proposition: campaign.value_proposition,
+        competitor_displacement: campaign.competitor_displacement,
+        social_proof: campaign.social_proof,
+        cta_link: campaign.cta_link,
+      }),
     });
 
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || `HTTP ${res.status}`);
-    }
+    if (!webhookRes.ok) throw new Error('Webhook returned ' + webhookRes.status);
 
-    showToast(`Campaign "${name}" re-launched successfully!`, 'success');
+    // Update launched_at
+    await supabaseRest('campaigns?id=eq.' + id, {
+      method: 'PATCH',
+      body: { launched_at: new Date().toISOString() },
+      extraHeaders: { 'Prefer': 'return=representation' },
+    });
+
+    showToast('Campaign "' + name + '" re-launched successfully!', 'success');
     await loadCampaignList();
   } catch (err) {
     console.error('Error re-running campaign:', err);
@@ -236,9 +250,9 @@ async function rerunCampaign(id, name) {
   }
 }
 
-// ── Hook into navigation ──────────────────────────────────────
+// ── Hook into navigation ─────────────────────────────────────
 (function () {
-  const _prevNavigateTo = window.navigateTo;
+  var _prevNavigateTo = window.navigateTo;
   window.navigateTo = function (page) {
     if (page !== 'campaign-list') {
       stopListPolling();
