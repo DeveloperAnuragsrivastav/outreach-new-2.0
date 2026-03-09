@@ -230,7 +230,7 @@ async function confirmRerunCampaign() {
 
   try {
     // Send to n8n webhook (same as original launch)
-    var webhookUrl = 'https://n8n-1-yvtq.onrender.com/webhook/outreach';
+    var webhookUrl = 'https://n8n.gignaati.com/webhook/Outreach_Campaign';
     var webhookRes = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
