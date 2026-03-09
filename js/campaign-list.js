@@ -197,9 +197,27 @@ async function confirmDeleteCampaign() {
 }
 
 // ── Re-run Campaign ──────────────────────────────────────────
-async function rerunCampaign(id, name) {
-  if (!confirm('Re-run campaign "' + name + '"? This will re-launch it with the same settings.')) return;
+function rerunCampaign(id, name) {
+  document.getElementById('rerun-campaign-id').value = id;
+  document.getElementById('rerun-campaign-name').value = name;
+  document.getElementById('rerun-campaign-msg').textContent = 'Re-launch "' + name + '" with the same settings? This will send the campaign to the webhook again.';
+  document.getElementById('rerun-campaign-modal').classList.remove('hidden');
+}
 
+function closeRerunModal() {
+  document.getElementById('rerun-campaign-modal').classList.add('hidden');
+}
+
+function closeRerunModalOnBackdrop(e) {
+  if (e.target === document.getElementById('rerun-campaign-modal')) closeRerunModal();
+}
+
+async function confirmRerunCampaign() {
+  var id = document.getElementById('rerun-campaign-id').value;
+  var name = document.getElementById('rerun-campaign-name').value;
+  if (!id) return;
+
+  closeRerunModal();
   showToast('Re-running "' + name + '"...', 'info');
 
   try {

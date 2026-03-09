@@ -605,6 +605,23 @@
                 </div>
             </div>
 
+            <!-- RE-RUN CONFIRM MODAL -->
+            <div id="rerun-campaign-modal" class="modal-backdrop hidden" onclick="closeRerunModalOnBackdrop(event)">
+                <div class="modal-box" style="max-width: 420px; padding: 32px; text-align: center;">
+                    <div style="width:56px;height:56px;border-radius:50%;background:#f0fdf4;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                    </div>
+                    <h2 class="modal-title" style="margin-bottom: 8px;">Re-run Campaign?</h2>
+                    <p class="modal-body" id="rerun-campaign-msg" style="margin-bottom: 24px; color: #555;">This will re-launch the campaign with the same settings.</p>
+                    <input type="hidden" id="rerun-campaign-id" />
+                    <input type="hidden" id="rerun-campaign-name" />
+                    <div class="modal-actions" style="justify-content:center;gap:12px;">
+                        <button class="btn-secondary" onclick="closeRerunModal()" style="padding:10px 24px;border:1px solid #ddd;background:#fff;border-radius:8px;cursor:pointer;">Cancel</button>
+                        <button class="btn-primary" onclick="confirmRerunCampaign()" style="padding:10px 24px;background:#16a34a;border-color:#16a34a;">Re-run</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- CONFIRMATION MODAL -->
             <div id="confirm-modal" class="modal-backdrop hidden" onclick="closeModalOnBackdrop(event)">
                 <div class="modal-box" id="modal-box">
