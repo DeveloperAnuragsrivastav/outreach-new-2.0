@@ -213,20 +213,22 @@ function closeRerunModalOnBackdrop(e) {
 }
 
 async function confirmRerunCampaign() {
-  var id = document.getElementById('rerun-campaign-id').value;
+  var id = parseInt(document.getElementById('rerun-campaign-id').value);
   var name = document.getElementById('rerun-campaign-name').value;
   if (!id) return;
+
+  // Get campaign from cache — no Supabase call needed
+  var campaign = _campaignCache.find(function (c) { return c.id === id; });
+  if (!campaign) {
+    closeRerunModal();
+    showToast('Campaign not found in list.', 'error');
+    return;
+  }
 
   closeRerunModal();
   showToast('Re-running "' + name + '"...', 'info');
 
   try {
-    // Fetch campaign data
-    var data = await supabaseRest('campaigns?id=eq.' + id + '&select=*');
-    if (!data || data.length === 0) throw new Error('Campaign not found');
-
-    var campaign = data[0];
-
     // Send to n8n webhook (same as original launch)
     var webhookUrl = 'https://n8n-1-yvtq.onrender.com/webhook/outreach';
     var webhookRes = await fetch(webhookUrl, {
@@ -253,15 +255,7 @@ async function confirmRerunCampaign() {
 
     if (!webhookRes.ok) throw new Error('Webhook returned ' + webhookRes.status);
 
-    // Update launched_at
-    await supabaseRest('campaigns?id=eq.' + id, {
-      method: 'PATCH',
-      body: { launched_at: new Date().toISOString() },
-      extraHeaders: { 'Prefer': 'return=representation' },
-    });
-
     showToast('Campaign "' + name + '" re-launched successfully!', 'success');
-    await loadCampaignList();
   } catch (err) {
     console.error('Error re-running campaign:', err);
     showToast('Failed to re-run campaign. ' + err.message, 'error');
