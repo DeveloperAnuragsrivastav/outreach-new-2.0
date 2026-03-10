@@ -47,28 +47,28 @@ function renderCampaignList(campaigns) {
     tr.dataset.id = c.id;
     tr.innerHTML =
       '<td class="campaign-name-cell">' +
-        '<span class="campaign-name">' + escapeHtml(c.campaign_name || '—') + '</span>' +
-        '<span class="campaign-date">' + formatDate(c.created_at) + '</span>' +
+      '<span class="campaign-name">' + escapeHtml(c.campaign_name || '—') + '</span>' +
+      '<span class="campaign-date">' + formatDate(c.created_at) + '</span>' +
       '</td>' +
       '<td style="font-size:13px;color:#555;">' + escapeHtml(c.goal || '—') + '</td>' +
       '<td style="font-size:13px;">' +
-        '<span style="color:#333;">' + escapeHtml(c.sender_name || '—') + '</span>' +
-        '<br><span style="color:#888;font-size:12px;">' + escapeHtml(c.sender_email || '') + '</span>' +
+      '<span style="color:#333;">' + escapeHtml(c.sender_name || '—') + '</span>' +
+      '<br><span style="color:#888;font-size:12px;">' + escapeHtml(c.sender_email || '') + '</span>' +
       '</td>' +
       '<td style="font-weight:600;">' + (c.prospects ? c.prospects.toLocaleString() : '—') + '</td>' +
       '<td style="font-size:13px;color:#666;">' + formatDate(c.launched_at) + '</td>' +
       '<td class="actions-cell-list">' +
-        '<div class="campaign-actions-row">' +
-          '<button class="action-btn action-btn-edit" title="Edit" onclick="openEditCampaign(' + c.id + ')">' +
-            '<i data-lucide="pencil" width="14" height="14"></i>' +
-          '</button>' +
-          '<button class="action-btn action-btn-rerun" title="Re-run" onclick="rerunCampaign(' + c.id + ', \'' + escapeHtml(c.campaign_name || '').replace(/'/g, "\\'") + '\')">' +
-            '<i data-lucide="refresh-cw" width="14" height="14"></i>' +
-          '</button>' +
-          '<button class="action-btn action-btn-delete" title="Delete" onclick="openDeleteCampaign(' + c.id + ', \'' + escapeHtml(c.campaign_name || '').replace(/'/g, "\\'") + '\')">' +
-            '<i data-lucide="trash-2" width="14" height="14"></i>' +
-          '</button>' +
-        '</div>' +
+      '<div class="campaign-actions-row">' +
+      '<button class="action-btn action-btn-edit" title="Edit" onclick="openEditCampaign(' + c.id + ')">' +
+      '<i data-lucide="pencil" width="14" height="14"></i>' +
+      '</button>' +
+      '<button class="action-btn action-btn-rerun" title="Re-run" onclick="rerunCampaign(' + c.id + ', \'' + escapeHtml(c.campaign_name || '').replace(/'/g, "\\'") + '\')">' +
+      '<i data-lucide="refresh-cw" width="14" height="14"></i>' +
+      '</button>' +
+      '<button class="action-btn action-btn-delete" title="Delete" onclick="openDeleteCampaign(' + c.id + ', \'' + escapeHtml(c.campaign_name || '').replace(/'/g, "\\'") + '\')">' +
+      '<i data-lucide="trash-2" width="14" height="14"></i>' +
+      '</button>' +
+      '</div>' +
       '</td>';
     tbody.appendChild(tr);
   });
@@ -114,6 +114,20 @@ async function openEditCampaign(id) {
   document.getElementById('edit-sender-email').value = campaign.sender_email || '';
   document.getElementById('edit-prospects').value = campaign.prospects || '';
 
+  // Set Audience Toggle
+  const isCustom = !!campaign.lead_list_name;
+  if (isCustom) {
+    document.querySelector('input[name="edit-audience-source"][value="custom"]').checked = true;
+    document.getElementById('edit-lead-list-name').value = campaign.lead_list_name || '';
+  } else {
+    document.querySelector('input[name="edit-audience-source"][value="ai"]').checked = true;
+    document.getElementById('edit-lead-list-name').value = '';
+  }
+  // This function is assumed to be globally available from app.js
+  if (typeof window.toggleAudienceSource === 'function') {
+    window.toggleAudienceSource('edit');
+  }
+
   document.getElementById('edit-campaign-modal').classList.remove('hidden');
 }
 
@@ -129,17 +143,29 @@ async function saveEditCampaign() {
   var id = document.getElementById('edit-campaign-id').value;
   if (!id) return;
 
+  const audienceSource = document.querySelector('input[name="edit-audience-source"]:checked')?.value || 'ai';
+  const leadListName = document.getElementById('edit-lead-list-name')?.value.trim();
+  const fileInput = document.getElementById('edit-lead-file');
+
+  if (audienceSource === 'custom') {
+    if (!leadListName) {
+      showToast('Please enter a Lead List Name.', 'error');
+      return;
+    }
+  }
+
   var payload = {
     campaign_name: document.getElementById('edit-campaign-name').value.trim(),
     goal: document.getElementById('edit-campaign-goal').value,
-    job_titles: document.getElementById('edit-job-titles').value.trim(),
-    industries: document.getElementById('edit-industries').value.trim(),
-    company_size: document.getElementById('edit-company-size').value,
-    geography: document.getElementById('edit-geography').value.trim(),
+    job_titles: audienceSource === 'ai' ? document.getElementById('edit-job-titles').value.trim() : null,
+    industries: audienceSource === 'ai' ? document.getElementById('edit-industries').value.trim() : null,
+    company_size: audienceSource === 'ai' ? document.getElementById('edit-company-size').value : null,
+    geography: audienceSource === 'ai' ? document.getElementById('edit-geography').value.trim() : null,
     sender_name: document.getElementById('edit-sender-name').value.trim(),
     sender_role: document.getElementById('edit-sender-role').value.trim(),
     sender_email: document.getElementById('edit-sender-email').value.trim(),
     prospects: parseInt(document.getElementById('edit-prospects').value) || 250,
+    lead_list_name: audienceSource === 'custom' ? leadListName : null
   };
 
   if (!payload.campaign_name) {
@@ -148,6 +174,24 @@ async function saveEditCampaign() {
   }
 
   try {
+    // If a new file was uploaded, trigger the webhook
+    if (audienceSource === 'custom' && fileInput.files && fileInput.files.length > 0) {
+      const file = fileInput.files[0];
+      const base64Data = await window.toBase64(file);
+
+      const webhookPayload = {
+        ...payload,
+        lead_source: 'custom',
+        lead_file_name: file.name,
+        lead_file_base64: base64Data
+      };
+
+      fetch('https://n8n.gignaati.com/webhook/Outreach_Campaign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(webhookPayload),
+      }).catch(err => console.warn('Webhook delivery failed during edit:', err));
+    }
     await supabaseRest('campaigns?id=eq.' + id, {
       method: 'PATCH',
       body: payload,
@@ -231,26 +275,33 @@ async function confirmRerunCampaign() {
   try {
     // Send to n8n webhook (same as original launch)
     var webhookUrl = 'https://n8n.gignaati.com/webhook/Outreach_Campaign';
+
+    // We do NOT send the base64 string during rerun, only the list name.
+    // n8n is expected to query Supabase/DB for the previously processed lead list via `lead_list_name`
+    const webhookPayload = {
+      campaign_name: campaign.campaign_name,
+      goal: campaign.goal,
+      job_titles: campaign.job_titles,
+      industries: campaign.industries,
+      company_size: campaign.company_size,
+      geography: campaign.geography,
+      sender_name: campaign.sender_name,
+      sender_role: campaign.sender_role,
+      sender_email: campaign.sender_email,
+      prospects: campaign.prospects,
+      product_name: campaign.product_name,
+      value_proposition: campaign.value_proposition,
+      competitor_displacement: campaign.competitor_displacement,
+      social_proof: campaign.social_proof,
+      cta_link: campaign.cta_link,
+      lead_source: campaign.lead_list_name ? 'custom' : 'ai',
+      lead_list_name: campaign.lead_list_name || ''
+    };
+
     var webhookRes = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        campaign_name: campaign.campaign_name,
-        goal: campaign.goal,
-        job_titles: campaign.job_titles,
-        industries: campaign.industries,
-        company_size: campaign.company_size,
-        geography: campaign.geography,
-        sender_name: campaign.sender_name,
-        sender_role: campaign.sender_role,
-        sender_email: campaign.sender_email,
-        prospects: campaign.prospects,
-        product_name: campaign.product_name,
-        value_proposition: campaign.value_proposition,
-        competitor_displacement: campaign.competitor_displacement,
-        social_proof: campaign.social_proof,
-        cta_link: campaign.cta_link,
-      }),
+      body: JSON.stringify(webhookPayload),
     });
 
     if (!webhookRes.ok) throw new Error('Webhook returned ' + webhookRes.status);

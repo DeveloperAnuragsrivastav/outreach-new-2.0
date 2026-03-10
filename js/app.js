@@ -185,14 +185,30 @@ async function openConfirmModal() {
     return;
   }
 
+  // Get audience source
+  const audienceSource = document.querySelector('input[name="audience-source"]:checked')?.value || 'ai';
+  const leadListName = document.getElementById('new-lead-list-name')?.value.trim();
+  const fileInput = document.getElementById('new-lead-file');
+
+  if (audienceSource === 'custom') {
+    if (!leadListName) {
+      showToast('Please enter a Lead List Name.', 'error');
+      return;
+    }
+    if (!fileInput.files || fileInput.files.length === 0) {
+      showToast('Please upload a leads file.', 'error');
+      return;
+    }
+  }
+
   // Collect all form data
   const payload = {
     campaign_name: name,
     goal: document.getElementById('new-goal')?.value || document.getElementById('campaign-goal')?.value || '',
-    job_titles: document.getElementById('new-job-titles')?.value || document.getElementById('icp-title')?.value || '',
-    industries: document.getElementById('new-industries')?.value || document.getElementById('icp-industry')?.value || '',
-    company_size: document.getElementById('icp-size')?.value || '',
-    geography: document.getElementById('icp-geo')?.value || '',
+    job_titles: audienceSource === 'ai' ? (document.getElementById('new-job-titles')?.value || document.getElementById('icp-title')?.value || '') : '',
+    industries: audienceSource === 'ai' ? (document.getElementById('new-industries')?.value || document.getElementById('icp-industry')?.value || '') : '',
+    company_size: audienceSource === 'ai' ? (document.getElementById('icp-size')?.value || '') : '',
+    geography: audienceSource === 'ai' ? (document.getElementById('icp-geo')?.value || '') : '',
     sender_name: document.getElementById('sender-name')?.value || '',
     sender_role: document.getElementById('sender-role')?.value || '',
     sender_email: document.getElementById('sender-email')?.value || '',
@@ -202,8 +218,21 @@ async function openConfirmModal() {
     value_proposition: document.getElementById('new-value-proposition')?.value || '',
     competitor_displacement: document.getElementById('new-competitor-displacement')?.value || '',
     social_proof: document.getElementById('new-social-proof')?.value || '',
-    cta_link: document.getElementById('new-cta-link')?.value || ''
+    cta_link: document.getElementById('new-cta-link')?.value || '',
+    lead_source: audienceSource,
+    lead_list_name: audienceSource === 'custom' ? leadListName : ''
   };
+
+  if (audienceSource === 'custom') {
+    const file = fileInput.files[0];
+    payload.lead_file_name = file.name;
+    try {
+      payload.lead_file_base64 = await toBase64(file);
+    } catch (err) {
+      showToast('Failed to read file.', 'error');
+      return;
+    }
+  }
 
   // Hide previous error if any
   const errorAlert = document.getElementById('form-error-alert');
@@ -360,6 +389,37 @@ function updateSlider(slider) {
   // Position tooltip (roughly accounting for thumb)
   const thumbOffset = 10 - (pct * 0.2);
   tooltip.style.left = `calc(${pct}% + ${thumbOffset}px)`;
+}
+
+// ── File & Audience Helpers ────────────────────────────────────────
+function toggleAudienceSource(context = 'new') {
+  const source = document.querySelector(`input[name="${context === 'new' ? '' : 'edit-'}audience-source"]:checked`).value;
+  const aiSection = document.getElementById(`${context === 'new' ? '' : 'edit-'}ai-audience-section`);
+  const customSection = document.getElementById(`${context === 'new' ? 'custom' : 'edit-custom'}-leads-section`);
+  
+  if (source === 'ai') {
+    aiSection.style.display = 'block';
+    customSection.style.display = 'none';
+  } else {
+    aiSection.style.display = 'none';
+    customSection.style.display = 'block';
+  }
+}
+
+function toBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      // FileReader results in "data:MIME_TYPE;base64,...". We only need the base64 part often.
+      let encoded = reader.result.toString().replace(/^data:(.*,)?/, '');
+      if ((encoded.length % 4) > 0) {
+        encoded += '='.repeat(4 - (encoded.length % 4));
+      }
+      resolve(encoded);
+    };
+    reader.onerror = error => reject(error);
+  });
 }
 
 // ── Toast notifications ────────────────────────────────────────
