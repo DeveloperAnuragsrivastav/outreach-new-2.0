@@ -369,7 +369,7 @@
 }
 
 .sidebar-nav-item.active .nav-active-bar {
-    width: 3px;
+    display: none;
 }
 
 .sidebar-footer {
