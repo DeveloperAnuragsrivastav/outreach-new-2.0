@@ -8,22 +8,7 @@ let sidebarCollapsed = false;
 document.addEventListener('DOMContentLoaded', initApp);
 
 function initApp() {
-  if (typeof window.checkAdminAuth === 'function' && !window.checkAdminAuth()) {
-    // Show login, hide shell immediately
-    const shell = document.getElementById('app-shell');
-    if (shell) {
-      shell.style.display = 'none';
-      shell.classList.remove('active');
-    }
-    const login = document.getElementById('page-admin-login');
-    if (login) {
-      login.style.display = 'flex';
-    }
-    finishLoading();
-    return;
-  }
-
-  // Already logged in, proceed to default 'new-campaign'
+  // Proceed to default 'new-campaign'
   navigateTo('new-campaign');
 }
 
@@ -276,7 +261,7 @@ async function openConfirmModal() {
   // Instantly show the modal & restore button state
   if (launchText) launchText.textContent = 'Launch Campaign';
   if (launchBtn) launchBtn.disabled = false;
-  
+
   const modal = document.getElementById('confirm-modal');
   modal.classList.remove('hidden');
   const path = modal.querySelector('.check-path');
@@ -292,36 +277,36 @@ async function openConfirmModal() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   })
-  .then(response => response.json().catch(() => ({})))
-  .then(data => {
-    // If explicit error from n8n 
-    if (data && data.success === false) {
-      if (errorAlert && errorMessage) {
-        errorMessage.textContent = data.message || 'An error occurred while launching.';
-        errorAlert.style.display = 'flex';
-      }
-      // Remove the temp row if it failed
-      const row = document.getElementById(tempId);
-      if (row) row.remove();
-    } else {
-      // Success case
-      const row = document.getElementById(tempId);
-      if (row) {
-        const badge = row.querySelector('.status-badge');
-        if (badge) {
-          badge.innerHTML = 'Running';
-          badge.style.opacity = '1';
-          badge.style.animation = 'none';
+    .then(response => response.json().catch(() => ({})))
+    .then(data => {
+      // If explicit error from n8n 
+      if (data && data.success === false) {
+        if (errorAlert && errorMessage) {
+          errorMessage.textContent = data.message || 'An error occurred while launching.';
+          errorAlert.style.display = 'flex';
         }
-        const sentCell = document.getElementById(tempId + '-sent');
-        if (sentCell) sentCell.textContent = '0';
+        // Remove the temp row if it failed
+        const row = document.getElementById(tempId);
+        if (row) row.remove();
+      } else {
+        // Success case
+        const row = document.getElementById(tempId);
+        if (row) {
+          const badge = row.querySelector('.status-badge');
+          if (badge) {
+            badge.innerHTML = 'Running';
+            badge.style.opacity = '1';
+            badge.style.animation = 'none';
+          }
+          const sentCell = document.getElementById(tempId + '-sent');
+          if (sentCell) sentCell.textContent = '0';
+        }
       }
-    }
-  })
-  .catch(err => {
-    console.warn('Webhook delivery failed:', err);
-    // Don't remove row on network error to avoid jarring UI, let poll correct it
-  });
+    })
+    .catch(err => {
+      console.warn('Webhook delivery failed:', err);
+      // Don't remove row on network error to avoid jarring UI, let poll correct it
+    });
 }
 function closeConfirmModal() {
   document.getElementById('confirm-modal').classList.add('hidden');
@@ -396,7 +381,7 @@ function toggleAudienceSource(context = 'new') {
   const source = document.querySelector(`input[name="${context === 'new' ? '' : 'edit-'}audience-source"]:checked`).value;
   const aiSection = document.getElementById(`${context === 'new' ? '' : 'edit-'}ai-audience-section`);
   const customSection = document.getElementById(`${context === 'new' ? 'custom' : 'edit-custom'}-leads-section`);
-  
+
   if (source === 'ai') {
     aiSection.style.display = 'block';
     customSection.style.display = 'none';
@@ -534,13 +519,13 @@ async function fetchAnalytics() {
         const errorData = await response.json();
         if (errorData.message) errMsg = errorData.message;
       } catch (e) {
-          // not json
+        // not json
       }
       throw new Error(errMsg);
     }
 
     const data = await response.json();
-    
+
     // Aggregate global stats from array
     let totalStats = {
       delivered: 0,
@@ -569,7 +554,7 @@ async function fetchAnalytics() {
         }
       });
     } else {
-        throw new Error('Unexpected data format received.');
+      throw new Error('Unexpected data format received.');
     }
 
     // Assign to UI
