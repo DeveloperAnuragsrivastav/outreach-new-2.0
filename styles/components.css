@@ -895,3 +895,24 @@
         flex-direction: column;
     }
 }
+
+/* ============================================================
+   FORGOT PASSWORD — additional styles
+   ============================================================ */
+
+/* Subtle separator dot between "Create one" and "Forgot password?" */
+.login-signup-link .sep-dot {
+    color: var(--slate-light);
+    margin: 0 4px;
+    user-select: none;
+}
+
+/* Forgot panel header — tighter top margin when no tabs are active */
+#auth-forgot-panel .login-form-header {
+    margin-bottom: 28px;
+}
+
+/* Ensure the forgot success state is centred correctly */
+#auth-forgot-success.auth-success-state {
+    padding: 16px 0 8px;
+}

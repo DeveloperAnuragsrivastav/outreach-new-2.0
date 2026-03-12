@@ -143,6 +143,47 @@
                     <p class="login-signup-link stagger-5">
                         Don&rsquo;t have an account?
                         <a href="#" onclick="switchAuthTab('signup'); return false;">Create one</a>
+                        &nbsp;&middot;&nbsp;
+                        <a href="#" onclick="switchAuthTab('forgot'); return false;">Forgot password?</a>
+                    </p>
+                </div>
+
+                <!-- ── FORGOT PASSWORD PANEL ── -->
+                <div id="auth-forgot-panel" style="display:none;">
+                    <div class="login-form-header" style="margin-top:28px;">
+                        <h2 class="login-form-title">Reset password</h2>
+                        <p class="login-form-subtitle">Enter your email and we&rsquo;ll send you a reset link.</p>
+                    </div>
+
+                    <div id="auth-forgot-success" class="auth-success-state" style="display:none;">
+                        <div class="auth-success-icon">
+                            <svg width="40" height="40" viewBox="0 0 52 52" fill="none">
+                                <circle cx="26" cy="26" r="25" stroke="#1a7a4a" stroke-width="2"/>
+                                <path d="M14 26l8 8 16-16" stroke="#1a7a4a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <h3 class="auth-success-title">Check your email</h3>
+                        <p class="auth-success-body" id="auth-forgot-success-msg">We sent a password reset link to your email address.</p>
+                        <button class="btn-auth-primary" style="margin-top:24px;" onclick="switchAuthTab('login')">Back to Sign In</button>
+                    </div>
+
+                    <form id="auth-forgot-form" onsubmit="handleForgotPassword(event)" novalidate>
+                        <div class="form-field stagger-2">
+                            <label for="forgot-email">Email address</label>
+                            <input type="email" id="forgot-email" name="email"
+                                placeholder="you@company.com" autocomplete="email" required />
+                        </div>
+
+                        <div id="auth-error-forgot" class="auth-error" style="display:none;"></div>
+
+                        <button type="submit" id="forgot-submit-btn" class="btn-primary btn-login stagger-3">
+                            <span class="btn-shine"></span>
+                            Send Reset Link
+                        </button>
+                    </form>
+
+                    <p class="login-signup-link stagger-4">
+                        <a href="#" onclick="switchAuthTab('login'); return false;">&larr; Back to Sign In</a>
                     </p>
                 </div>
 

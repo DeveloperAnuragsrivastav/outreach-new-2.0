@@ -1,7 +1,7 @@
 /* ============================================================
    CAMPAIGNBUDDY — SUPABASE AUTH
-   Handles login, signup, session guard, and logout.
-   Uses Supabase JS client loaded via CDN (window._supabase).
+   Handles login, signup, forgot password, session guard, logout.
+   Uses Supabase JS client loaded via CDN (window.supabase).
    ============================================================ */
 
 (function () {
@@ -10,6 +10,9 @@
   // ── Constants ────────────────────────────────────────────────
   const SUPABASE_URL  = 'https://mjffvxkothiczayhkjcx.supabase.co';
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qZmZ2eGtvdGhpY3pheWhramN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwOTEyNjEsImV4cCI6MjA4NzY2NzI2MX0.-g4vsENBmQnCk-M7c-k_lax-tTV2BOJEZxtFEDYxgEc';
+
+  // Deployed app URL — Supabase will append the token hash to this
+  const RESET_REDIRECT_URL = 'https://outreach-new-2-0.vercel.app/reset-password.html';
 
   // ── Wait for Supabase CDN to be ready ────────────────────────
   function waitForSupabase(cb) {
@@ -25,9 +28,8 @@
     // Expose client globally so logout button in sidebar can call it
     window._sbClient = client;
 
-    // Determine which "view" is active on this load
-    var loginView  = document.getElementById('page-auth');
-    var appShell   = document.getElementById('app-shell');
+    var loginView = document.getElementById('page-auth');
+    var appShell  = document.getElementById('app-shell');
 
     if (!loginView || !appShell) return; // safety
 
@@ -35,15 +37,13 @@
     client.auth.getSession().then(function (result) {
       var session = result.data && result.data.session;
       if (session) {
-        // User is logged in — show app, hide auth
         showApp(session.user);
       } else {
-        // Not logged in — show login view
         showAuthPage('login');
       }
     });
 
-    // Listen for auth state changes (e.g. after email confirmation redirect)
+    // Listen for auth state changes (email confirmation redirect, etc.)
     client.auth.onAuthStateChange(function (event, session) {
       if (event === 'SIGNED_IN' && session) {
         showApp(session.user);
@@ -59,7 +59,6 @@
       appShell.style.display   = 'flex';
       appShell.classList.add('active');
 
-      // Populate user email in sidebar if element exists
       var emailEl = document.getElementById('sidebar-user-email');
       if (emailEl && user) emailEl.textContent = user.email || '';
     }
@@ -72,28 +71,41 @@
       switchAuthTab(tab);
     }
 
-    // ── Tab switcher (Login ↔ Signup) ─────────────────────────
+    // ── Tab switcher (Login / Signup / Forgot) ────────────────
     window.switchAuthTab = function (tab) {
       var loginPanel  = document.getElementById('auth-login-panel');
       var signupPanel = document.getElementById('auth-signup-panel');
+      var forgotPanel = document.getElementById('auth-forgot-panel');
       var tabLogin    = document.getElementById('auth-tab-login');
       var tabSignup   = document.getElementById('auth-tab-signup');
 
       if (!loginPanel || !signupPanel) return;
 
+      // Clear all errors
       clearAuthError('login');
       clearAuthError('signup');
+      clearAuthError('forgot');
+
+      // Hide all panels
+      loginPanel.style.display  = 'none';
+      signupPanel.style.display = 'none';
+      if (forgotPanel) forgotPanel.style.display = 'none';
+
+      // Remove active from all tabs
+      if (tabLogin)  tabLogin.classList.remove('active');
+      if (tabSignup) tabSignup.classList.remove('active');
 
       if (tab === 'login') {
-        loginPanel.style.display  = 'block';
-        signupPanel.style.display = 'none';
-        if (tabLogin)  tabLogin.classList.add('active');
-        if (tabSignup) tabSignup.classList.remove('active');
-      } else {
-        loginPanel.style.display  = 'none';
+        loginPanel.style.display = 'block';
+        if (tabLogin) tabLogin.classList.add('active');
+      } else if (tab === 'signup') {
         signupPanel.style.display = 'block';
-        if (tabLogin)  tabLogin.classList.remove('active');
         if (tabSignup) tabSignup.classList.add('active');
+      } else if (tab === 'forgot') {
+        // Forgot panel: reset to form state (in case success was shown before)
+        resetForgotPanel();
+        if (forgotPanel) forgotPanel.style.display = 'block';
+        // Neither tab is active — that's intentional for the forgot view
       }
     };
 
@@ -109,7 +121,7 @@
         return;
       }
 
-      setAuthLoading(btn, true, 'Signing in…');
+      setAuthLoading(btn, true, 'Signing in\u2026');
       clearAuthError('login');
 
       var result = await client.auth.signInWithPassword({ email: email, password: password });
@@ -142,7 +154,7 @@
         return;
       }
 
-      setAuthLoading(btn, true, 'Creating account…');
+      setAuthLoading(btn, true, 'Creating account\u2026');
       clearAuthError('signup');
 
       var result = await client.auth.signUp({ email: email, password: password });
@@ -152,8 +164,34 @@
       if (result.error) {
         setAuthError('signup', friendlyError(result.error.message));
       } else {
-        // Show success message — user needs to confirm email
         showSignupSuccess(email);
+      }
+    };
+
+    // ── Forgot Password ───────────────────────────────────────
+    window.handleForgotPassword = async function (e) {
+      e.preventDefault();
+      var email = document.getElementById('forgot-email').value.trim();
+      var btn   = document.getElementById('forgot-submit-btn');
+
+      if (!email) {
+        setAuthError('forgot', 'Please enter your email address.');
+        return;
+      }
+
+      setAuthLoading(btn, true, 'Sending\u2026');
+      clearAuthError('forgot');
+
+      var result = await client.auth.resetPasswordForEmail(email, {
+        redirectTo: RESET_REDIRECT_URL
+      });
+
+      setAuthLoading(btn, false, 'Send Reset Link');
+
+      if (result.error) {
+        setAuthError('forgot', friendlyError(result.error.message));
+      } else {
+        showForgotSuccess(email);
       }
     };
 
@@ -183,6 +221,28 @@
         '</div>';
     }
 
+    // ── Forgot password success state ─────────────────────────
+    function showForgotSuccess(email) {
+      var form    = document.getElementById('auth-forgot-form');
+      var success = document.getElementById('auth-forgot-success');
+      var msgEl   = document.getElementById('auth-forgot-success-msg');
+
+      if (form)    form.style.display    = 'none';
+      if (success) success.style.display = 'block';
+      if (msgEl)   msgEl.innerHTML = 'We sent a reset link to <strong>' + escapeHtmlAuth(email) + '</strong>. Check your inbox and follow the instructions.';
+    }
+
+    function resetForgotPanel() {
+      var form    = document.getElementById('auth-forgot-form');
+      var success = document.getElementById('auth-forgot-success');
+      var emailEl = document.getElementById('forgot-email');
+
+      if (form)    form.style.display    = 'block';
+      if (success) success.style.display = 'none';
+      if (emailEl) emailEl.value = '';
+      clearAuthError('forgot');
+    }
+
     // ── UI helpers ────────────────────────────────────────────
     function setAuthError(form, msg) {
       var el = document.getElementById('auth-error-' + form);
@@ -196,7 +256,7 @@
 
     function setAuthLoading(btn, loading, label) {
       if (!btn) return;
-      btn.disabled = loading;
+      btn.disabled    = loading;
       btn.textContent = label;
       btn.style.opacity = loading ? '0.75' : '1';
     }
@@ -217,10 +277,10 @@
 
     function escapeHtmlAuth(str) {
       return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+        .replace(/&/g,  '&amp;')
+        .replace(/</g,  '&lt;')
+        .replace(/>/g,  '&gt;')
+        .replace(/"/g,  '&quot;');
     }
   });
 
