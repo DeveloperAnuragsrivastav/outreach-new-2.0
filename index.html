@@ -171,6 +171,50 @@
         .sg-gate-submit:hover {
             opacity: 0.88;
         }
+
+        /* Wizard Step Reveal */
+        .wizard-section[data-wizard-step],
+        .wizard-launch[data-wizard-step] {
+            display: none;
+        }
+
+        .wizard-section[data-wizard-step].step-visible,
+        .wizard-launch[data-wizard-step].step-visible {
+            display: block;
+            animation: stepReveal 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        @keyframes stepReveal {
+            from {
+                opacity: 0;
+                transform: translateY(24px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .wizard-next-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+            padding: 12px 32px;
+            background: var(--charcoal);
+            color: var(--white);
+            border: none;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: opacity var(--transition-fast);
+        }
+
+        .wizard-next-btn:hover {
+            opacity: 0.88;
+        }
     </style>
 </head>
 
@@ -327,7 +371,7 @@
                     <!-- LEFT: Form -->
                     <div class="wizard-form-col">
                         <!-- Section: Campaign Info -->
-                        <div class="wizard-section scroll-reveal">
+                        <div class="wizard-section scroll-reveal step-visible" data-wizard-step="1">
                             <div class="section-divider"><span class="section-divider-label">Your Campaign</span></div>
                             <div class="form-field">
                                 <label for="campaign-name">Campaign Name</label>
@@ -364,10 +408,12 @@
                                 <input type="url" id="new-cta-link" placeholder="https://example.com/book-demo"
                                     oninput="updatePreview()" />
                             </div>
+                            <button type="button" class="wizard-next-btn" onclick="revealNextStep(1)">Next
+                                <span>→</span></button>
                         </div>
 
                         <!-- Section: Target Audience -->
-                        <div class="wizard-section scroll-reveal">
+                        <div class="wizard-section scroll-reveal" data-wizard-step="2">
                             <div class="section-divider"><span class="section-divider-label">Your Target Audience</span>
                             </div>
 
@@ -451,10 +497,12 @@
                                         rows="3" oninput="updatePreview()"></textarea>
                                 </div>
                             </div>
+                            <button type="button" class="wizard-next-btn" onclick="revealNextStep(2)">Next
+                                <span>→</span></button>
                         </div>
 
                         <!-- Section: Sender Identity -->
-                        <div class="wizard-section scroll-reveal">
+                        <div class="wizard-section scroll-reveal" data-wizard-step="3">
                             <div class="section-divider"><span class="section-divider-label">Sender Identity</span>
                             </div>
                             <div class="form-row-2">
@@ -480,10 +528,12 @@
                                     placeholder="Enter social proof, stats, or case studies..." rows="3"
                                     oninput="updatePreview()"></textarea>
                             </div>
+                            <button type="button" class="wizard-next-btn" onclick="revealNextStep(3)">Next
+                                <span>→</span></button>
                         </div>
 
                         <!-- Section: Campaign Scale -->
-                        <div class="wizard-section scroll-reveal">
+                        <div class="wizard-section scroll-reveal" data-wizard-step="4">
                             <div class="section-divider"><span class="section-divider-label">Campaign Scale</span></div>
                             <div class="form-field">
                                 <label for="campaign-scale">Number of Prospects</label>
@@ -492,7 +542,7 @@
                         </div>
 
                         <!-- Launch Button -->
-                        <div class="wizard-launch scroll-reveal">
+                        <div class="wizard-launch scroll-reveal" data-wizard-step="5">
                             <button class="btn-launch" id="launch-btn" onclick="openConfirmModal()">
                                 <span class="launch-text">Launch Campaign</span>
                                 <span class="launch-arrow"><i data-lucide="arrow-right" width="18"

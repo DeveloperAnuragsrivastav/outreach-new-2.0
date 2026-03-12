@@ -41,6 +41,44 @@ function sgGateSubmit() {
   initScrollReveal();
 }
 
+// ── Wizard Step Reveal ─────────────────────────────────────────
+function revealNextStep(currentStep) {
+  // Hide the Next button that was clicked
+  const currentEl = document.querySelector('[data-wizard-step="' + currentStep + '"]');
+  if (currentEl) {
+    const btn = currentEl.querySelector('.wizard-next-btn');
+    if (btn) btn.style.display = 'none';
+  }
+
+  const nextStep = currentStep + 1;
+  const nextEl = document.querySelector('[data-wizard-step="' + nextStep + '"]');
+  if (nextEl && !nextEl.classList.contains('step-visible')) {
+    nextEl.classList.add('step-visible');
+    initIcons();
+    setTimeout(() => {
+      nextEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+
+    // Auto-reveal Launch button when Campaign Scale (step 4) is shown
+    if (nextStep === 4) {
+      const launchEl = document.querySelector('[data-wizard-step="5"]');
+      if (launchEl) {
+        setTimeout(() => {
+          launchEl.classList.add('step-visible');
+          initIcons();
+        }, 300);
+      }
+    }
+  }
+}
+
+function revealAllSteps() {
+  document.querySelectorAll('[data-wizard-step]').forEach(el => {
+    el.classList.add('step-visible');
+  });
+  initIcons();
+}
+
 document.addEventListener('DOMContentLoaded', initApp);
 
 function initApp() {
@@ -390,6 +428,7 @@ function autofillCampaignForm() {
   const slider = document.getElementById('campaign-scale');
   if (slider) { slider.value = 500; updateSlider(slider); }
   updatePreview();
+  revealAllSteps();
   showToast('Form filled with sample data!', 'success');
 }
 
