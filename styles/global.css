@@ -51,6 +51,8 @@
 html {
   font-size: 16px;
   scroll-behavior: smooth;
+  height: 100%;
+  overflow: hidden;
 }
 
 body {
@@ -60,7 +62,9 @@ body {
   color: var(--charcoal);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
 }
 
 img {

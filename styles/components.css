@@ -203,14 +203,21 @@
 
 .login-signup-link {
     text-align: center;
-    font-size: 0.875rem;
-    color: var(--slate);
-    margin-top: 20px;
+    font-size: 0.8125rem;   /* 13px — smaller, subtler */
+    color: #666;
+    margin-top: 14px;
+    line-height: 1.6;
 }
 
 .login-signup-link a {
-    color: var(--charcoal);
-    font-weight: 600;
+    color: #666;
+    font-weight: 400;
+    text-decoration: none;
+    transition: color 120ms ease;
+}
+
+.login-signup-link a:hover {
+    color: #000;
     text-decoration: underline;
     text-underline-offset: 2px;
 }
