@@ -19,6 +19,13 @@
     <script src="https://unpkg.com/lucide@latest" defer></script>
     <!-- Supabase JS Client (for Auth) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- AUTH FLASH GUARD: hide both shells before JS runs -->
+    <style>
+        /* These rules are the source of truth on first paint.
+           auth.js will override them once the session check resolves. */
+        #app-shell  { display: none !important; }
+        #page-auth  { display: none !important; }
+    </style>
     <style>
         .form-field textarea {
             width: 100%;
@@ -58,7 +65,7 @@
     <!-- ============================================================
      AUTH PAGE (Login + Signup) — shown when user is not authenticated
      ============================================================ -->
-    <div id="page-auth" class="page auth-page-wrap" style="display:none;">
+    <div id="page-auth" class="page auth-page-wrap">
 
         <!-- Left: Background image panel -->
         <div class="login-image-panel">
@@ -253,7 +260,7 @@
     <!-- ============================================================
      AUTHENTICATED SHELL (Sidebar + Topbar + Pages ...)
      ============================================================ -->
-    <div id="app-shell" class="page" style="display:none;">
+    <div id="app-shell" class="page">
 
         <!-- SIDEBAR -->
         <aside id="sidebar" class="sidebar">

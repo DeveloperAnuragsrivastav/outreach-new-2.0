@@ -1,18 +1,26 @@
 /* ============================================================
    CAMPAIGNBUDDY — SUPABASE AUTH
-   Handles login, signup, forgot password, session guard, logout.
-   Uses Supabase JS client loaded via CDN (window.supabase).
+   Handles session guard, login, signup, forgot password, logout.
+
+   Flash-of-sidebar prevention strategy
+   ─────────────────────────────────────
+   index.html <head> contains:
+     #app-shell { display: none !important; }
+     #page-auth { display: none !important; }
+
+   Both shells are invisible on first paint — no JS needed.
+   This file runs the session check FIRST, then removes the
+   !important guard from whichever shell should be visible.
+   The other shell stays hidden via the head CSS.
    ============================================================ */
 
 (function () {
   'use strict';
 
   // ── Constants ────────────────────────────────────────────────
-  const SUPABASE_URL  = 'https://mjffvxkothiczayhkjcx.supabase.co';
-  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qZmZ2eGtvdGhpY3pheWhramN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwOTEyNjEsImV4cCI6MjA4NzY2NzI2MX0.-g4vsENBmQnCk-M7c-k_lax-tTV2BOJEZxtFEDYxgEc';
-
-  // Deployed app URL — Supabase will append the token hash to this
-  const RESET_REDIRECT_URL = 'https://outreach-new-2-0.vercel.app/reset-password.html';
+  var SUPABASE_URL  = 'https://mjffvxkothiczayhkjcx.supabase.co';
+  var SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qZmZ2eGtvdGhpY3pheWhramN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwOTEyNjEsImV4cCI6MjA4NzY2NzI2MX0.-g4vsENBmQnCk-M7c-k_lax-tTV2BOJEZxtFEDYxgEc';
+  var RESET_REDIRECT_URL = 'https://outreach-new-2-0.vercel.app/reset-password.html';
 
   // ── Wait for Supabase CDN to be ready ────────────────────────
   function waitForSupabase(cb) {
@@ -25,53 +33,70 @@
 
   // ── Bootstrap ────────────────────────────────────────────────
   waitForSupabase(function (client) {
-    // Expose client globally so logout button in sidebar can call it
     window._sbClient = client;
 
-    var loginView = document.getElementById('page-auth');
-    var appShell  = document.getElementById('app-shell');
+    var authPage = document.getElementById('page-auth');
+    var appShell = document.getElementById('app-shell');
 
-    if (!loginView || !appShell) return; // safety
+    if (!authPage || !appShell) return;
 
-    // ── Session guard ─────────────────────────────────────────
+    // ── STEP 1: Session check — runs before anything is revealed ─
+    // getSession() reads from localStorage synchronously in most
+    // browsers, so this resolves almost instantly (< 1 ms).
+    // Either way, both shells remain hidden until this resolves.
     client.auth.getSession().then(function (result) {
       var session = result.data && result.data.session;
       if (session) {
-        showApp(session.user);
+        revealApp(session.user);
       } else {
-        showAuthPage('login');
+        revealAuthPage('login');
       }
     });
 
-    // Listen for auth state changes (email confirmation redirect, etc.)
+    // ── STEP 2: Keep listening for future auth state changes ──────
+    // (covers: email confirmation redirect, Google OAuth callback,
+    //  sign-out from another tab, session expiry, etc.)
     client.auth.onAuthStateChange(function (event, session) {
       if (event === 'SIGNED_IN' && session) {
-        showApp(session.user);
+        revealApp(session.user);
       } else if (event === 'SIGNED_OUT') {
-        showAuthPage('login');
+        revealAuthPage('login');
       }
     });
 
-    // ── Show / hide helpers ───────────────────────────────────
-    function showApp(user) {
-      loginView.style.display  = 'none';
-      loginView.classList.remove('active');
-      appShell.style.display   = 'flex';
+    // ── Reveal helpers ────────────────────────────────────────────
+    // We use style.removeProperty('display') to lift the !important
+    // rule set in the <head> guard, then set the explicit value we want.
+
+    function revealApp(user) {
+      // Hide auth page
+      authPage.style.setProperty('display', 'none', 'important');
+      authPage.classList.remove('active');
+
+      // Show app shell
+      appShell.style.removeProperty('display');   // lifts !important guard
+      appShell.style.display = 'flex';
       appShell.classList.add('active');
 
+      // Populate user email in sidebar
       var emailEl = document.getElementById('sidebar-user-email');
       if (emailEl && user) emailEl.textContent = user.email || '';
     }
 
-    function showAuthPage(tab) {
-      appShell.style.display  = 'none';
+    function revealAuthPage(tab) {
+      // Hide app shell
+      appShell.style.setProperty('display', 'none', 'important');
       appShell.classList.remove('active');
-      loginView.style.display = 'flex';
-      loginView.classList.add('active');
+
+      // Show auth page
+      authPage.style.removeProperty('display');   // lifts !important guard
+      authPage.style.display = 'flex';
+      authPage.classList.add('active');
+
       switchAuthTab(tab);
     }
 
-    // ── Tab switcher (Login / Signup / Forgot) ────────────────
+    // ── Tab switcher (Login / Signup / Forgot) ────────────────────
     window.switchAuthTab = function (tab) {
       var loginPanel  = document.getElementById('auth-login-panel');
       var signupPanel = document.getElementById('auth-signup-panel');
@@ -81,17 +106,14 @@
 
       if (!loginPanel || !signupPanel) return;
 
-      // Clear all errors
       clearAuthError('login');
       clearAuthError('signup');
       clearAuthError('forgot');
 
-      // Hide all panels
       loginPanel.style.display  = 'none';
       signupPanel.style.display = 'none';
       if (forgotPanel) forgotPanel.style.display = 'none';
 
-      // Remove active from all tabs
       if (tabLogin)  tabLogin.classList.remove('active');
       if (tabSignup) tabSignup.classList.remove('active');
 
@@ -102,14 +124,12 @@
         signupPanel.style.display = 'block';
         if (tabSignup) tabSignup.classList.add('active');
       } else if (tab === 'forgot') {
-        // Forgot panel: reset to form state (in case success was shown before)
         resetForgotPanel();
         if (forgotPanel) forgotPanel.style.display = 'block';
-        // Neither tab is active — that's intentional for the forgot view
       }
     };
 
-    // ── Login ─────────────────────────────────────────────────
+    // ── Login ─────────────────────────────────────────────────────
     window.handleAuthLogin = async function (e) {
       e.preventDefault();
       var email    = document.getElementById('login-email').value.trim();
@@ -130,10 +150,10 @@
         setAuthError('login', friendlyError(result.error.message));
         setAuthLoading(btn, false, 'Sign In');
       }
-      // On success, onAuthStateChange fires → showApp()
+      // On success, onAuthStateChange fires → revealApp()
     };
 
-    // ── Signup ────────────────────────────────────────────────
+    // ── Signup ────────────────────────────────────────────────────
     window.handleAuthSignup = async function (e) {
       e.preventDefault();
       var email    = document.getElementById('signup-email').value.trim();
@@ -168,7 +188,7 @@
       }
     };
 
-    // ── Forgot Password ───────────────────────────────────────
+    // ── Forgot Password ───────────────────────────────────────────
     window.handleForgotPassword = async function (e) {
       e.preventDefault();
       var email = document.getElementById('forgot-email').value.trim();
@@ -195,36 +215,30 @@
       }
     };
 
-    // ── Google OAuth ──────────────────────────────────────────
+    // ── Google OAuth ──────────────────────────────────────────────
     window.handleGoogleLogin = async function () {
       var btn = document.querySelector('.btn-google');
-      if (btn) {
-        btn.disabled = true;
-        btn.style.opacity = '0.75';
-      }
+      if (btn) { btn.disabled = true; btn.style.opacity = '0.75'; }
 
       var result = await client.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-          redirectTo: 'https://outreach-new-2-0.vercel.app'
-        }
+        options: { redirectTo: 'https://outreach-new-2-0.vercel.app' }
       });
 
       if (result.error) {
-        // Re-enable button and show error if OAuth popup/redirect fails
         if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
         setAuthError('login', result.error.message || 'Google sign-in failed. Please try again.');
       }
-      // On success, Supabase redirects the browser — no further action needed here
+      // On success, Supabase redirects the browser — no further action needed
     };
 
-    // ── Logout ────────────────────────────────────────────────
+    // ── Logout ────────────────────────────────────────────────────
     window.handleLogout = async function () {
       await client.auth.signOut();
-      // onAuthStateChange fires → showAuthPage('login')
+      // onAuthStateChange fires → revealAuthPage('login')
     };
 
-    // ── Signup success state ──────────────────────────────────
+    // ── Signup success state ──────────────────────────────────────
     function showSignupSuccess(email) {
       var panel = document.getElementById('auth-signup-panel');
       if (!panel) return;
@@ -244,7 +258,7 @@
         '</div>';
     }
 
-    // ── Forgot password success state ─────────────────────────
+    // ── Forgot password success state ─────────────────────────────
     function showForgotSuccess(email) {
       var form    = document.getElementById('auth-forgot-form');
       var success = document.getElementById('auth-forgot-success');
@@ -266,7 +280,7 @@
       clearAuthError('forgot');
     }
 
-    // ── UI helpers ────────────────────────────────────────────
+    // ── UI helpers ────────────────────────────────────────────────
     function setAuthError(form, msg) {
       var el = document.getElementById('auth-error-' + form);
       if (el) { el.textContent = msg; el.style.display = 'flex'; }
@@ -279,8 +293,8 @@
 
     function setAuthLoading(btn, loading, label) {
       if (!btn) return;
-      btn.disabled    = loading;
-      btn.textContent = label;
+      btn.disabled      = loading;
+      btn.textContent   = label;
       btn.style.opacity = loading ? '0.75' : '1';
     }
 
