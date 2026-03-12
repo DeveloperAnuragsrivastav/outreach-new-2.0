@@ -4,6 +4,42 @@
 
 // ── Init & State ───────────────────────────────────────────────
 let sidebarCollapsed = false;
+let sendgridApiKey = null;
+
+// ── SendGrid Gate ──────────────────────────────────────────────
+function sgGateYes() {
+  document.getElementById('sg-gate-btns').style.display = 'none';
+  document.getElementById('sg-gate-input-area').style.display = 'block';
+  setTimeout(() => document.getElementById('sg-api-key-input').focus(), 50);
+}
+
+function sgGateNo() {
+  window.open('https://sendgrid.com', '_blank');
+}
+
+function sgGateSubmit() {
+  const input = document.getElementById('sg-api-key-input');
+  const errorEl = document.getElementById('sg-gate-error');
+  const key = input.value.trim();
+
+  if (!key.startsWith('SG.')) {
+    errorEl.style.display = 'block';
+    input.style.borderColor = 'var(--danger)';
+    return;
+  }
+
+  // Valid key
+  errorEl.style.display = 'none';
+  input.style.borderColor = '';
+  sendgridApiKey = key;
+
+  // Hide gate, reveal campaign form
+  document.getElementById('sendgrid-gate').style.display = 'none';
+  document.getElementById('new-campaign-header').style.display = '';
+  document.getElementById('wizard-layout').style.display = '';
+  initIcons();
+  initScrollReveal();
+}
 
 document.addEventListener('DOMContentLoaded', initApp);
 
@@ -205,7 +241,8 @@ async function openConfirmModal() {
     social_proof: document.getElementById('new-social-proof')?.value || '',
     cta_link: document.getElementById('new-cta-link')?.value || '',
     lead_source: audienceSource,
-    lead_list_name: audienceSource === 'custom' ? leadListName : ''
+    lead_list_name: audienceSource === 'custom' ? leadListName : '',
+    sendgrid_api_key: sendgridApiKey || ''
   };
 
   if (audienceSource === 'custom') {

@@ -20,6 +20,10 @@
     <!-- Supabase JS Client (for Auth — used by auth.js for logout + email display) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        body {
+            overflow: auto;
+        }
+
         .form-field textarea {
             width: 100%;
             height: auto;
@@ -44,6 +48,129 @@
         .form-field textarea::placeholder {
             color: var(--charcoal-40);
         }
+
+        /* SendGrid Gate */
+        #sendgrid-gate {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            padding: 40px 20px;
+        }
+
+        .sg-gate-card {
+            background: var(--white);
+            border: 1px solid var(--charcoal-08);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+            padding: 48px 40px;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .sg-gate-card h2 {
+            font-family: var(--font-heading);
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--charcoal);
+        }
+
+        .sg-gate-card p {
+            color: var(--slate);
+            font-size: 0.9rem;
+            margin-bottom: 28px;
+        }
+
+        .sg-gate-btns {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .sg-gate-btns button {
+            padding: 12px 28px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            border: 1px solid var(--charcoal-20);
+        }
+
+        .sg-btn-yes {
+            background: var(--charcoal);
+            color: var(--white);
+            border-color: var(--charcoal) !important;
+        }
+
+        .sg-btn-yes:hover {
+            opacity: 0.88;
+        }
+
+        .sg-btn-no {
+            background: var(--white);
+            color: var(--charcoal);
+        }
+
+        .sg-btn-no:hover {
+            background: var(--warm-stone);
+        }
+
+        .sg-gate-input-area {
+            display: none;
+            margin-top: 24px;
+            text-align: left;
+        }
+
+        .sg-gate-input-area label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 8px;
+            color: var(--charcoal);
+        }
+
+        .sg-gate-input-area input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--charcoal-20);
+            border-radius: var(--radius-sm);
+            font-size: 0.9375rem;
+            outline: none;
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+        }
+
+        .sg-gate-input-area input:focus {
+            border-color: var(--charcoal);
+            box-shadow: 0 0 0 3px rgba(10, 10, 10, 0.08);
+        }
+
+        .sg-gate-error {
+            color: var(--danger);
+            font-size: 0.8rem;
+            margin-top: 8px;
+            display: none;
+        }
+
+        .sg-gate-submit {
+            margin-top: 16px;
+            width: 100%;
+            padding: 12px;
+            background: var(--charcoal);
+            color: var(--white);
+            border: none;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: opacity var(--transition-fast);
+        }
+
+        .sg-gate-submit:hover {
+            opacity: 0.88;
+        }
     </style>
 </head>
 
@@ -57,21 +184,21 @@
 
     <!-- SESSION GUARD: redirect to login.html if not authenticated -->
     <script>
-    (async function () {
-        try {
-            var SUPABASE_URL = 'https://mjffvxkothiczayhkjcx.supabase.co';
-            var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qZmZ2eGtvdGhpY3pheWhramN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwOTEyNjEsImV4cCI6MjA4NzY2NzI2MX0.-g4vsENBmQnCk-M7c-k_lax-tTV2BOJEZxtFEDYxgEc';
-            var tokenData = JSON.parse(localStorage.getItem('sb-mjffvxkothiczayhkjcx-auth-token') || '{}');
-            var accessToken = (tokenData && tokenData.access_token) ? tokenData.access_token : '';
-            if (!accessToken) { window.location.href = 'login.html'; return; }
-            var res = await fetch(SUPABASE_URL + '/auth/v1/user', {
-                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken }
-            });
-            if (res.status !== 200) { window.location.href = 'login.html'; return; }
-        } catch (e) {
-            window.location.href = 'login.html';
-        }
-    })();
+        (async function () {
+            try {
+                var SUPABASE_URL = 'https://mjffvxkothiczayhkjcx.supabase.co';
+                var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qZmZ2eGtvdGhpY3pheWhramN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwOTEyNjEsImV4cCI6MjA4NzY2NzI2MX0.-g4vsENBmQnCk-M7c-k_lax-tTV2BOJEZxtFEDYxgEc';
+                var tokenData = JSON.parse(localStorage.getItem('sb-mjffvxkothiczayhkjcx-auth-token') || '{}');
+                var accessToken = (tokenData && tokenData.access_token) ? tokenData.access_token : '';
+                if (!accessToken) { window.location.href = 'login.html'; return; }
+                var res = await fetch(SUPABASE_URL + '/auth/v1/user', {
+                    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken }
+                });
+                if (res.status !== 200) { window.location.href = 'login.html'; return; }
+            } catch (e) {
+                window.location.href = 'login.html';
+            }
+        })();
     </script>
 
     <!-- ============================================================
@@ -160,8 +287,27 @@
 
             <!-- PAGE 3: NEW CAMPAIGN WIZARD -->
             <div id="page-new-campaign" class="inner-page active">
-                <!-- Parallax Header -->
-                <div class="page-parallax-header" id="new-campaign-header">
+                <!-- SendGrid API Key Gate -->
+                <div id="sendgrid-gate">
+                    <div class="sg-gate-card">
+                        <h2>Do you have a SendGrid API Key?</h2>
+                        <p>A SendGrid API key is required to send campaign emails.</p>
+                        <div class="sg-gate-btns" id="sg-gate-btns">
+                            <button class="sg-btn-yes" onclick="sgGateYes()">Yes, I have one</button>
+                            <button class="sg-btn-no" onclick="sgGateNo()">No, get one</button>
+                        </div>
+                        <div class="sg-gate-input-area" id="sg-gate-input-area">
+                            <label for="sg-api-key-input">Enter your SendGrid API Key</label>
+                            <input type="text" id="sg-api-key-input" placeholder="SG.xxxxxxxxxxxxxxxx" />
+                            <div class="sg-gate-error" id="sg-gate-error">API key must start with <strong>SG.</strong>
+                            </div>
+                            <button class="sg-gate-submit" onclick="sgGateSubmit()">Continue</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parallax Header (hidden until gate passed) -->
+                <div class="page-parallax-header" id="new-campaign-header" style="display:none">
                     <div class="parallax-bg"
                         style="background-image: url('https://images.unsplash.com/photo-1497366216548-37526070297c?w=1400&q=80&auto=format&fit=crop')">
                     </div>
@@ -177,7 +323,7 @@
                     </button>
                 </div>
 
-                <div class="wizard-layout">
+                <div class="wizard-layout" id="wizard-layout" style="display:none">
                     <!-- LEFT: Form -->
                     <div class="wizard-form-col">
                         <!-- Section: Campaign Info -->
