@@ -364,12 +364,15 @@ function updatePreview() {
 // ── Slider ─────────────────────────────────────────────────────
 function initSlider() {
   const slider = document.getElementById('campaign-scale');
-  if (slider) updateSlider(slider);
+  if (!slider) return; // exit gracefully if not on the campaign page
+  updateSlider(slider);
 }
 function updateSlider(slider) {
+  if (!slider) return; // guard: called externally with a null element
   const min = +slider.min, max = +slider.max, val = +slider.value;
   const pct = ((val - min) / (max - min)) * 100;
   const tooltip = document.getElementById('slider-tooltip');
+  if (!tooltip) return; // guard: tooltip element missing
   tooltip.textContent = val.toLocaleString();
   // Position tooltip (roughly accounting for thumb)
   const thumbOffset = 10 - (pct * 0.2);
