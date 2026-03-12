@@ -83,7 +83,7 @@
                         <p class="login-form-subtitle">Sign in to your account to continue.</p>
                     </div>
 
-                    <!-- Google OAuth -->
+                    <!-- Google OAuth (commented out — uncomment to re-enable)
                     <button type="button" class="btn-google" id="google-btn" onclick="googleLogin()">
                         <svg class="btn-google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -94,12 +94,12 @@
                         Continue with Google
                     </button>
 
-                    <!-- OR divider -->
                     <div class="auth-or-divider">
                         <span class="auth-or-line"></span>
                         <span class="auth-or-text">or</span>
                         <span class="auth-or-line"></span>
                     </div>
+                    -->
 
                     <form id="login-form" onsubmit="loginWithEmail(event)" novalidate>
                         <div class="form-field">
@@ -361,25 +361,25 @@
                 }
             };
 
-            // ── Google OAuth ──────────────────────────────────────
-            window.googleLogin = async function () {
-                var btn = document.getElementById('google-btn');
-                if (btn) { btn.disabled = true; btn.style.opacity = '0.75'; }
-
-                try {
-                    var res = await client.auth.signInWithOAuth({
-                        provider: 'google',
-                        options: { redirectTo: 'https://outreach-new-2-0.vercel.app' }
-                    });
-                    if (res.error) {
-                        if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
-                        showError('login', res.error.message || 'Google sign-in failed.');
-                    }
-                } catch (err) {
-                    if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
-                    showError('login', 'Google sign-in failed. Please try again.');
-                }
-            };
+            // ── Google OAuth (commented out — uncomment to re-enable) ──
+            // window.googleLogin = async function () {
+            //     var btn = document.getElementById('google-btn');
+            //     if (btn) { btn.disabled = true; btn.style.opacity = '0.75'; }
+            //
+            //     try {
+            //         var res = await client.auth.signInWithOAuth({
+            //             provider: 'google',
+            //             options: { redirectTo: 'https://outreach-new-2-0.vercel.app' }
+            //         });
+            //         if (res.error) {
+            //             if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+            //             showError('login', res.error.message || 'Google sign-in failed.');
+            //         }
+            //     } catch (err) {
+            //         if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+            //         showError('login', 'Google sign-in failed. Please try again.');
+            //     }
+            // };
 
             // ── Helpers ───────────────────────────────────────────
             function showError(form, msg) {
