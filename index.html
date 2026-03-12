@@ -26,6 +26,23 @@
         #app-shell  { display: none !important; }
         #page-auth  { display: none !important; }
     </style>
+    <!-- EMERGENCY FALLBACK: if auth.js never runs (e.g. script error),
+         show the login page after the DOM is ready so the page is never blank -->
+    <script>
+        (function() {
+            function emergencyShowLogin() {
+                var auth = document.getElementById('page-auth');
+                var app  = document.getElementById('app-shell');
+                if (auth && auth.style.display !== 'flex') {
+                    auth.style.removeProperty('display');
+                    auth.style.display = 'flex';
+                }
+                if (app) app.style.setProperty('display', 'none', 'important');
+            }
+            // If nothing has been revealed after 6 seconds, force-show login
+            window._authEmergencyTimer = setTimeout(emergencyShowLogin, 6000);
+        })();
+    </script>
     <style>
         .form-field textarea {
             width: 100%;

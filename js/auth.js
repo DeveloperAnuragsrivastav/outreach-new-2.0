@@ -2,101 +2,141 @@
    CAMPAIGNBUDDY — SUPABASE AUTH
    Handles session guard, login, signup, forgot password, logout.
 
-   Flash-of-sidebar prevention strategy
-   ─────────────────────────────────────
-   index.html <head> contains:
-     #app-shell { display: none !important; }
-     #page-auth { display: none !important; }
+   Blank-page prevention strategy
+   ────────────────────────────────
+   index.html <head> hides both shells with display:none !important.
+   This file is responsible for revealing exactly one of them.
 
-   Both shells are invisible on first paint — no JS needed.
-   This file runs the session check FIRST, then removes the
-   !important guard from whichever shell should be visible.
-   The other shell stays hidden via the head CSS.
+   Three safety nets ensure the page is NEVER blank:
+   1. try/catch around getSession() — any error falls back to login
+   2. Hard 5-second timeout — if Supabase CDN is slow/blocked,
+      the login page is shown after 5s regardless
+   3. window.onerror handler — if this script itself crashes,
+      the login page is force-shown immediately
    ============================================================ */
 
 (function () {
   'use strict';
 
-  // ── Constants ────────────────────────────────────────────────
-  var SUPABASE_URL  = 'https://mjffvxkothiczayhkjcx.supabase.co';
-  var SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qZmZ2eGtvdGhpY3pheWhramN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwOTEyNjEsImV4cCI6MjA4NzY2NzI2MX0.-g4vsENBmQnCk-M7c-k_lax-tTV2BOJEZxtFEDYxgEc';
+  var SUPABASE_URL       = 'https://mjffvxkothiczayhkjcx.supabase.co';
+  var SUPABASE_ANON      = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qZmZ2eGtvdGhpY3pheWhramN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwOTEyNjEsImV4cCI6MjA4NzY2NzI2MX0.-g4vsENBmQnCk-M7c-k_lax-tTV2BOJEZxtFEDYxgEc';
   var RESET_REDIRECT_URL = 'https://outreach-new-2-0.vercel.app/reset-password.html';
 
-  // ── Wait for Supabase CDN to be ready ────────────────────────
+  // Track whether we have already revealed a shell so we never
+  // accidentally show both or trigger a double-reveal.
+  var revealed = false;
+
+  // ── Emergency fallback: show login if anything goes wrong ────
+  // This fires if the Supabase CDN never loads OR if this script
+  // throws an uncaught exception before revealing a shell.
+  var emergencyTimer = setTimeout(function () {
+    if (!revealed) {
+      console.warn('[auth] Emergency fallback: showing login page after 5s timeout');
+      forceShowLogin();
+    }
+  }, 5000);
+
+  // Also catch any synchronous crash in this script
+  var _prevOnError = window.onerror;
+  window.onerror = function (msg, src, line, col, err) {
+    if (!revealed) {
+      console.error('[auth] window.onerror — forcing login page', err || msg);
+      forceShowLogin();
+    }
+    if (typeof _prevOnError === 'function') _prevOnError(msg, src, line, col, err);
+    return false;
+  };
+
+  // ── Low-level reveal (bypasses !important via removeProperty) ─
+  function forceShowLogin() {
+    revealed = true;
+    clearTimeout(emergencyTimer);
+    var authPage = document.getElementById('page-auth');
+    var appShell = document.getElementById('app-shell');
+    if (authPage) {
+      authPage.style.removeProperty('display');
+      authPage.style.display = 'flex';
+    }
+    if (appShell) {
+      appShell.style.setProperty('display', 'none', 'important');
+    }
+    // Best-effort tab switch — switchAuthTab may not be defined yet
+    if (typeof window.switchAuthTab === 'function') {
+      window.switchAuthTab('login');
+    }
+  }
+
+  function forceShowApp(user) {
+    revealed = true;
+    clearTimeout(emergencyTimer);
+    var authPage = document.getElementById('page-auth');
+    var appShell = document.getElementById('app-shell');
+    if (appShell) {
+      appShell.style.removeProperty('display');
+      appShell.style.display = 'flex';
+      appShell.classList.add('active');
+    }
+    if (authPage) {
+      authPage.style.setProperty('display', 'none', 'important');
+      authPage.classList.remove('active');
+    }
+    var emailEl = document.getElementById('sidebar-user-email');
+    if (emailEl && user) emailEl.textContent = user.email || '';
+  }
+
+  // ── Wait for Supabase CDN ─────────────────────────────────────
+  // Polls every 50ms. The emergencyTimer above guarantees we don't
+  // wait forever if the CDN never loads.
   function waitForSupabase(cb) {
     if (window.supabase && window.supabase.createClient) {
-      cb(window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON));
+      try {
+        cb(window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON));
+      } catch (e) {
+        console.error('[auth] Failed to create Supabase client:', e);
+        forceShowLogin();
+      }
     } else {
       setTimeout(function () { waitForSupabase(cb); }, 50);
     }
   }
 
-  // ── Bootstrap ────────────────────────────────────────────────
+  // ── Bootstrap ─────────────────────────────────────────────────
   waitForSupabase(function (client) {
     window._sbClient = client;
 
-    var authPage = document.getElementById('page-auth');
-    var appShell = document.getElementById('app-shell');
+    // ── STEP 1: Session check with try/catch ──────────────────
+    client.auth.getSession()
+      .then(function (result) {
+        if (revealed) return; // already shown by onerror or timeout
+        var session = result && result.data && result.data.session;
+        if (session) {
+          forceShowApp(session.user);
+        } else {
+          forceShowLogin();
+          if (typeof window.switchAuthTab === 'function') {
+            window.switchAuthTab('login');
+          }
+        }
+      })
+      .catch(function (err) {
+        console.error('[auth] getSession() failed:', err);
+        if (!revealed) forceShowLogin();
+      });
 
-    if (!authPage || !appShell) return;
-
-    // ── STEP 1: Session check — runs before anything is revealed ─
-    // getSession() reads from localStorage synchronously in most
-    // browsers, so this resolves almost instantly (< 1 ms).
-    // Either way, both shells remain hidden until this resolves.
-    client.auth.getSession().then(function (result) {
-      var session = result.data && result.data.session;
-      if (session) {
-        revealApp(session.user);
-      } else {
-        revealAuthPage('login');
-      }
-    });
-
-    // ── STEP 2: Keep listening for future auth state changes ──────
-    // (covers: email confirmation redirect, Google OAuth callback,
-    //  sign-out from another tab, session expiry, etc.)
+    // ── STEP 2: Listen for future auth state changes ──────────
     client.auth.onAuthStateChange(function (event, session) {
       if (event === 'SIGNED_IN' && session) {
-        revealApp(session.user);
+        forceShowApp(session.user);
       } else if (event === 'SIGNED_OUT') {
-        revealAuthPage('login');
+        revealed = false; // allow re-reveal
+        forceShowLogin();
+        if (typeof window.switchAuthTab === 'function') {
+          window.switchAuthTab('login');
+        }
       }
     });
 
-    // ── Reveal helpers ────────────────────────────────────────────
-    // We use style.removeProperty('display') to lift the !important
-    // rule set in the <head> guard, then set the explicit value we want.
-
-    function revealApp(user) {
-      // Hide auth page
-      authPage.style.setProperty('display', 'none', 'important');
-      authPage.classList.remove('active');
-
-      // Show app shell
-      appShell.style.removeProperty('display');   // lifts !important guard
-      appShell.style.display = 'flex';
-      appShell.classList.add('active');
-
-      // Populate user email in sidebar
-      var emailEl = document.getElementById('sidebar-user-email');
-      if (emailEl && user) emailEl.textContent = user.email || '';
-    }
-
-    function revealAuthPage(tab) {
-      // Hide app shell
-      appShell.style.setProperty('display', 'none', 'important');
-      appShell.classList.remove('active');
-
-      // Show auth page
-      authPage.style.removeProperty('display');   // lifts !important guard
-      authPage.style.display = 'flex';
-      authPage.classList.add('active');
-
-      switchAuthTab(tab);
-    }
-
-    // ── Tab switcher (Login / Signup / Forgot) ────────────────────
+    // ── Tab switcher ──────────────────────────────────────────
     window.switchAuthTab = function (tab) {
       var loginPanel  = document.getElementById('auth-login-panel');
       var signupPanel = document.getElementById('auth-signup-panel');
@@ -129,7 +169,7 @@
       }
     };
 
-    // ── Login ─────────────────────────────────────────────────────
+    // ── Login ─────────────────────────────────────────────────
     window.handleAuthLogin = async function (e) {
       e.preventDefault();
       var email    = document.getElementById('login-email').value.trim();
@@ -144,16 +184,20 @@
       setAuthLoading(btn, true, 'Signing in\u2026');
       clearAuthError('login');
 
-      var result = await client.auth.signInWithPassword({ email: email, password: password });
-
-      if (result.error) {
-        setAuthError('login', friendlyError(result.error.message));
+      try {
+        var result = await client.auth.signInWithPassword({ email: email, password: password });
+        if (result.error) {
+          setAuthError('login', friendlyError(result.error.message));
+          setAuthLoading(btn, false, 'Sign In');
+        }
+        // On success, onAuthStateChange fires → forceShowApp()
+      } catch (err) {
+        setAuthError('login', 'Network error. Please check your connection.');
         setAuthLoading(btn, false, 'Sign In');
       }
-      // On success, onAuthStateChange fires → revealApp()
     };
 
-    // ── Signup ────────────────────────────────────────────────────
+    // ── Signup ────────────────────────────────────────────────
     window.handleAuthSignup = async function (e) {
       e.preventDefault();
       var email    = document.getElementById('signup-email').value.trim();
@@ -177,18 +221,21 @@
       setAuthLoading(btn, true, 'Creating account\u2026');
       clearAuthError('signup');
 
-      var result = await client.auth.signUp({ email: email, password: password });
-
-      setAuthLoading(btn, false, 'Create Account');
-
-      if (result.error) {
-        setAuthError('signup', friendlyError(result.error.message));
-      } else {
-        showSignupSuccess(email);
+      try {
+        var result = await client.auth.signUp({ email: email, password: password });
+        setAuthLoading(btn, false, 'Create Account');
+        if (result.error) {
+          setAuthError('signup', friendlyError(result.error.message));
+        } else {
+          showSignupSuccess(email);
+        }
+      } catch (err) {
+        setAuthLoading(btn, false, 'Create Account');
+        setAuthError('signup', 'Network error. Please check your connection.');
       }
     };
 
-    // ── Forgot Password ───────────────────────────────────────────
+    // ── Forgot Password ───────────────────────────────────────
     window.handleForgotPassword = async function (e) {
       e.preventDefault();
       var email = document.getElementById('forgot-email').value.trim();
@@ -202,43 +249,55 @@
       setAuthLoading(btn, true, 'Sending\u2026');
       clearAuthError('forgot');
 
-      var result = await client.auth.resetPasswordForEmail(email, {
-        redirectTo: RESET_REDIRECT_URL
-      });
-
-      setAuthLoading(btn, false, 'Send Reset Link');
-
-      if (result.error) {
-        setAuthError('forgot', friendlyError(result.error.message));
-      } else {
-        showForgotSuccess(email);
+      try {
+        var result = await client.auth.resetPasswordForEmail(email, {
+          redirectTo: RESET_REDIRECT_URL
+        });
+        setAuthLoading(btn, false, 'Send Reset Link');
+        if (result.error) {
+          setAuthError('forgot', friendlyError(result.error.message));
+        } else {
+          showForgotSuccess(email);
+        }
+      } catch (err) {
+        setAuthLoading(btn, false, 'Send Reset Link');
+        setAuthError('forgot', 'Network error. Please check your connection.');
       }
     };
 
-    // ── Google OAuth ──────────────────────────────────────────────
+    // ── Google OAuth ──────────────────────────────────────────
     window.handleGoogleLogin = async function () {
       var btn = document.querySelector('.btn-google');
       if (btn) { btn.disabled = true; btn.style.opacity = '0.75'; }
 
-      var result = await client.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: 'https://outreach-new-2-0.vercel.app' }
-      });
-
-      if (result.error) {
+      try {
+        var result = await client.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo: 'https://outreach-new-2-0.vercel.app' }
+        });
+        if (result.error) {
+          if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+          setAuthError('login', result.error.message || 'Google sign-in failed. Please try again.');
+        }
+      } catch (err) {
         if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
-        setAuthError('login', result.error.message || 'Google sign-in failed. Please try again.');
+        setAuthError('login', 'Google sign-in failed. Please try again.');
       }
-      // On success, Supabase redirects the browser — no further action needed
     };
 
-    // ── Logout ────────────────────────────────────────────────────
+    // ── Logout ────────────────────────────────────────────────
     window.handleLogout = async function () {
-      await client.auth.signOut();
-      // onAuthStateChange fires → revealAuthPage('login')
+      try {
+        await client.auth.signOut();
+        // onAuthStateChange fires → forceShowLogin()
+      } catch (err) {
+        console.error('[auth] signOut failed:', err);
+        revealed = false;
+        forceShowLogin();
+      }
     };
 
-    // ── Signup success state ──────────────────────────────────────
+    // ── Signup success state ──────────────────────────────────
     function showSignupSuccess(email) {
       var panel = document.getElementById('auth-signup-panel');
       if (!panel) return;
@@ -258,12 +317,11 @@
         '</div>';
     }
 
-    // ── Forgot password success state ─────────────────────────────
+    // ── Forgot password success state ─────────────────────────
     function showForgotSuccess(email) {
       var form    = document.getElementById('auth-forgot-form');
       var success = document.getElementById('auth-forgot-success');
       var msgEl   = document.getElementById('auth-forgot-success-msg');
-
       if (form)    form.style.display    = 'none';
       if (success) success.style.display = 'block';
       if (msgEl)   msgEl.innerHTML = 'We sent a reset link to <strong>' + escapeHtmlAuth(email) + '</strong>. Check your inbox and follow the instructions.';
@@ -273,14 +331,13 @@
       var form    = document.getElementById('auth-forgot-form');
       var success = document.getElementById('auth-forgot-success');
       var emailEl = document.getElementById('forgot-email');
-
       if (form)    form.style.display    = 'block';
       if (success) success.style.display = 'none';
       if (emailEl) emailEl.value = '';
       clearAuthError('forgot');
     }
 
-    // ── UI helpers ────────────────────────────────────────────────
+    // ── UI helpers ────────────────────────────────────────────
     function setAuthError(form, msg) {
       var el = document.getElementById('auth-error-' + form);
       if (el) { el.textContent = msg; el.style.display = 'flex'; }
