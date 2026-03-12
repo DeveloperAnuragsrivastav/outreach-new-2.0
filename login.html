@@ -119,12 +119,14 @@
 
                     <p class="login-signup-link">
                         Don&rsquo;t have an account? <a href="#" onclick="switchTab('signup'); return false;">Create one</a>
+                        <!-- Forgot password link (commented out — uncomment to re-enable)
                         &nbsp;&middot;&nbsp;
                         <a href="#" onclick="switchTab('forgot'); return false;">Forgot password?</a>
+                        -->
                     </p>
                 </div>
 
-                <!-- ── FORGOT PASSWORD PANEL ── -->
+                <!-- ── FORGOT PASSWORD PANEL (commented out — uncomment to re-enable) ──
                 <div id="panel-forgot" style="display:none;">
                     <div class="login-form-header" style="margin-top:28px;">
                         <h2 class="login-form-title">Reset password</h2>
@@ -159,6 +161,7 @@
                         <a href="#" onclick="switchTab('login'); return false;">&larr; Back to Sign In</a>
                     </p>
                 </div>
+                -->
 
                 <!-- ── SIGNUP PANEL ── -->
                 <div id="panel-signup" style="display:none;">
@@ -254,13 +257,13 @@
                 if (tabLogin)  tabLogin.classList.toggle('active', tab === 'login');
                 if (tabSignup) tabSignup.classList.toggle('active', tab === 'signup');
 
-                // Reset forgot form when re-opening
-                if (tab === 'forgot') {
-                    var form = document.getElementById('forgot-form');
-                    var succ = document.getElementById('forgot-success');
-                    if (form) form.style.display = 'block';
-                    if (succ) succ.style.display = 'none';
-                }
+                // Reset forgot form when re-opening (commented out — uncomment to re-enable)
+                // if (tab === 'forgot') {
+                //     var form = document.getElementById('forgot-form');
+                //     var succ = document.getElementById('forgot-success');
+                //     if (form) form.style.display = 'block';
+                //     if (succ) succ.style.display = 'none';
+                // }
             };
 
             // ── Email + Password Login ────────────────────────────
@@ -333,33 +336,33 @@
                 }
             };
 
-            // ── Forgot Password ───────────────────────────────────
-            window.forgotPassword = async function (e) {
-                e.preventDefault();
-                var email = document.getElementById('forgot-email').value.trim();
-                var btn   = document.getElementById('forgot-btn');
-
-                clearError('forgot');
-                if (!email) { showError('forgot', 'Please enter your email address.'); return; }
-
-                setLoading(btn, true, 'Sending\u2026');
-
-                try {
-                    var res = await client.auth.resetPasswordForEmail(email, { redirectTo: RESET_REDIRECT_URL });
-                    setLoading(btn, false, 'Send Reset Link');
-                    if (res.error) {
-                        showError('forgot', friendly(res.error.message));
-                    } else {
-                        document.getElementById('forgot-form').style.display = 'none';
-                        document.getElementById('forgot-success').style.display = 'block';
-                        document.getElementById('forgot-success-msg').innerHTML =
-                            'We sent a reset link to <strong>' + esc(email) + '</strong>. Check your inbox and follow the instructions.';
-                    }
-                } catch (err) {
-                    setLoading(btn, false, 'Send Reset Link');
-                    showError('forgot', 'Network error. Please check your connection.');
-                }
-            };
+            // ── Forgot Password (commented out — uncomment to re-enable) ──
+            // window.forgotPassword = async function (e) {
+            //     e.preventDefault();
+            //     var email = document.getElementById('forgot-email').value.trim();
+            //     var btn   = document.getElementById('forgot-btn');
+            //
+            //     clearError('forgot');
+            //     if (!email) { showError('forgot', 'Please enter your email address.'); return; }
+            //
+            //     setLoading(btn, true, 'Sending\u2026');
+            //
+            //     try {
+            //         var res = await client.auth.resetPasswordForEmail(email, { redirectTo: RESET_REDIRECT_URL });
+            //         setLoading(btn, false, 'Send Reset Link');
+            //         if (res.error) {
+            //             showError('forgot', friendly(res.error.message));
+            //         } else {
+            //             document.getElementById('forgot-form').style.display = 'none';
+            //             document.getElementById('forgot-success').style.display = 'block';
+            //             document.getElementById('forgot-success-msg').innerHTML =
+            //                 'We sent a reset link to <strong>' + esc(email) + '</strong>. Check your inbox and follow the instructions.';
+            //         }
+            //     } catch (err) {
+            //         setLoading(btn, false, 'Send Reset Link');
+            //         showError('forgot', 'Network error. Please check your connection.');
+            //     }
+            // };
 
             // ── Google OAuth (commented out — uncomment to re-enable) ──
             // window.googleLogin = async function () {
