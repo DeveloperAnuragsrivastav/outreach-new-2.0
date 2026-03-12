@@ -195,6 +195,29 @@
       }
     };
 
+    // ── Google OAuth ──────────────────────────────────────────
+    window.handleGoogleLogin = async function () {
+      var btn = document.querySelector('.btn-google');
+      if (btn) {
+        btn.disabled = true;
+        btn.style.opacity = '0.75';
+      }
+
+      var result = await client.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: 'https://outreach-new-2-0.vercel.app'
+        }
+      });
+
+      if (result.error) {
+        // Re-enable button and show error if OAuth popup/redirect fails
+        if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+        setAuthError('login', result.error.message || 'Google sign-in failed. Please try again.');
+      }
+      // On success, Supabase redirects the browser — no further action needed here
+    };
+
     // ── Logout ────────────────────────────────────────────────
     window.handleLogout = async function () {
       await client.auth.signOut();
