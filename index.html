@@ -17,32 +17,8 @@
     <link rel="stylesheet" href="styles/pages.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
     <script src="https://unpkg.com/lucide@latest" defer></script>
-    <!-- Supabase JS Client (for Auth) -->
+    <!-- Supabase JS Client (for Auth — used by auth.js for logout + email display) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- AUTH FLASH GUARD: hide both shells before JS runs -->
-    <style>
-        /* These rules are the source of truth on first paint.
-           auth.js will override them once the session check resolves. */
-        #app-shell  { display: none !important; }
-        #page-auth  { display: none !important; }
-    </style>
-    <!-- EMERGENCY FALLBACK: if auth.js never runs (e.g. script error),
-         show the login page after the DOM is ready so the page is never blank -->
-    <script>
-        (function() {
-            function emergencyShowLogin() {
-                var auth = document.getElementById('page-auth');
-                var app  = document.getElementById('app-shell');
-                if (auth && auth.style.display !== 'flex') {
-                    auth.style.removeProperty('display');
-                    auth.style.display = 'flex';
-                }
-                if (app) app.style.setProperty('display', 'none', 'important');
-            }
-            // If nothing has been revealed after 6 seconds, force-show login
-            window._authEmergencyTimer = setTimeout(emergencyShowLogin, 6000);
-        })();
-    </script>
     <style>
         .form-field textarea {
             width: 100%;
@@ -79,199 +55,24 @@
     <!-- TOAST CONTAINER -->
     <div id="toast-container"></div>
 
-    <!-- ============================================================
-     AUTH PAGE (Login + Signup) — shown when user is not authenticated
-     ============================================================ -->
-    <div id="page-auth" class="page auth-page-wrap">
-
-        <!-- Left: Background image panel -->
-        <div class="login-image-panel">
-            <div class="login-image-bg"></div>
-            <div class="login-image-overlay"></div>
-            <div class="login-image-content">
-                <div class="login-logo-mark">
-                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                        <rect width="12" height="12" rx="3" fill="#fff" />
-                        <rect x="16" width="12" height="12" rx="3" fill="#fff" opacity="0.5" />
-                        <rect y="16" width="12" height="12" rx="3" fill="#fff" opacity="0.5" />
-                        <rect x="16" y="16" width="12" height="12" rx="3" fill="#fff" opacity="0.25" />
-                    </svg>
-                    <span class="logo-text-white" style="margin-left:10px;">CampaignBuddy</span>
-                </div>
-                <div class="login-headline-group">
-                    <h1 class="login-editorial-headline">AI-powered<br>outreach,<br>on autopilot.</h1>
-                    <p class="login-subheadline">Launch personalised email campaigns to thousands of ideal prospects — in minutes, not weeks.</p>
-                </div>
-                <div class="login-testimonial-card">
-                    <div class="testimonial-body">
-                        <p class="testimonial-quote">&ldquo;CampaignBuddy tripled our booked meetings in the first month. It just works.&rdquo;</p>
-                        <p class="testimonial-meta">— Head of Growth, B2B SaaS startup</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Vertical divider -->
-        <div class="login-divider"></div>
-
-        <!-- Right: Form panel -->
-        <div class="login-form-panel">
-            <div class="login-form-inner">
-
-                <!-- Logo (mobile / small screens) -->
-                <div class="login-form-logo">
-                    <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
-                        <rect width="12" height="12" rx="3" fill="#0A0A0A" />
-                        <rect x="16" width="12" height="12" rx="3" fill="#0A0A0A" opacity="0.5" />
-                        <rect y="16" width="12" height="12" rx="3" fill="#0A0A0A" opacity="0.5" />
-                        <rect x="16" y="16" width="12" height="12" rx="3" fill="#0A0A0A" opacity="0.25" />
-                    </svg>
-                    <span style="font-family:var(--font-heading);font-size:1rem;font-weight:700;color:var(--charcoal);margin-left:9px;">CampaignBuddy</span>
-                </div>
-
-                <!-- Tab switcher -->
-                <div class="auth-tabs">
-                    <button id="auth-tab-login" class="auth-tab active" onclick="switchAuthTab('login')">Sign In</button>
-                    <button id="auth-tab-signup" class="auth-tab" onclick="switchAuthTab('signup')">Create Account</button>
-                    <span class="auth-tab-indicator" id="auth-tab-indicator"></span>
-                </div>
-
-                <!-- ── LOGIN PANEL ── -->
-                <div id="auth-login-panel">
-                    <div class="login-form-header" style="margin-top:28px;">
-                        <h2 class="login-form-title">Welcome back</h2>
-                        <p class="login-form-subtitle">Sign in to your account to continue.</p>
-                    </div>
-
-                    <!-- Google OAuth button -->
-                    <button type="button" class="btn-google stagger-2" onclick="handleGoogleLogin()">
-                        <svg class="btn-google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                        </svg>
-                        Continue with Google
-                    </button>
-
-                    <!-- OR divider -->
-                    <div class="auth-or-divider stagger-2">
-                        <span class="auth-or-line"></span>
-                        <span class="auth-or-text">or</span>
-                        <span class="auth-or-line"></span>
-                    </div>
-
-                    <form onsubmit="handleAuthLogin(event)" autocomplete="on" novalidate>
-                        <div class="form-field stagger-2">
-                            <label for="login-email">Email</label>
-                            <input type="email" id="login-email" name="email"
-                                placeholder="you@company.com" autocomplete="email" required />
-                        </div>
-                        <div class="form-field stagger-3" style="position:relative;">
-                            <label for="login-password">Password</label>
-                            <input type="password" id="login-password" name="password"
-                                placeholder="••••••••" autocomplete="current-password" required />
-                        </div>
-
-                        <!-- Error message -->
-                        <div id="auth-error-login" class="auth-error" style="display:none;"></div>
-
-                        <button type="submit" id="login-submit-btn" class="btn-primary btn-login stagger-4">
-                            <span class="btn-shine"></span>
-                            Sign In
-                        </button>
-                    </form>
-
-                    <p class="login-signup-link stagger-5">
-                        Don&rsquo;t have an account? <a href="#" onclick="switchAuthTab('signup'); return false;">Create one</a>
-                        &nbsp;&middot;&nbsp;
-                        <a href="#" onclick="switchAuthTab('forgot'); return false;">Forgot password?</a>
-                    </p>
-                </div>
-
-                <!-- ── FORGOT PASSWORD PANEL ── -->
-                <div id="auth-forgot-panel" style="display:none;">
-                    <div class="login-form-header" style="margin-top:28px;">
-                        <h2 class="login-form-title">Reset password</h2>
-                        <p class="login-form-subtitle">Enter your email and we&rsquo;ll send you a reset link.</p>
-                    </div>
-
-                    <div id="auth-forgot-success" class="auth-success-state" style="display:none;">
-                        <div class="auth-success-icon">
-                            <svg width="40" height="40" viewBox="0 0 52 52" fill="none">
-                                <circle cx="26" cy="26" r="25" stroke="#1a7a4a" stroke-width="2"/>
-                                <path d="M14 26l8 8 16-16" stroke="#1a7a4a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </div>
-                        <h3 class="auth-success-title">Check your email</h3>
-                        <p class="auth-success-body" id="auth-forgot-success-msg">We sent a password reset link to your email address.</p>
-                        <button class="btn-auth-primary" style="margin-top:24px;" onclick="switchAuthTab('login')">Back to Sign In</button>
-                    </div>
-
-                    <form id="auth-forgot-form" onsubmit="handleForgotPassword(event)" novalidate>
-                        <div class="form-field stagger-2">
-                            <label for="forgot-email">Email address</label>
-                            <input type="email" id="forgot-email" name="email"
-                                placeholder="you@company.com" autocomplete="email" required />
-                        </div>
-
-                        <div id="auth-error-forgot" class="auth-error" style="display:none;"></div>
-
-                        <button type="submit" id="forgot-submit-btn" class="btn-primary btn-login stagger-3">
-                            <span class="btn-shine"></span>
-                            Send Reset Link
-                        </button>
-                    </form>
-
-                    <p class="login-signup-link stagger-4">
-                        <a href="#" onclick="switchAuthTab('login'); return false;">&larr; Back to Sign In</a>
-                    </p>
-                </div>
-
-                <!-- ── SIGNUP PANEL ── -->
-                <div id="auth-signup-panel" style="display:none;">
-                    <div class="login-form-header" style="margin-top:28px;">
-                        <h2 class="login-form-title">Create account</h2>
-                        <p class="login-form-subtitle">Start launching AI-powered campaigns today.</p>
-                    </div>
-
-                    <form onsubmit="handleAuthSignup(event)" autocomplete="on" novalidate>
-                        <div class="form-field stagger-2">
-                            <label for="signup-email">Email</label>
-                            <input type="email" id="signup-email" name="email"
-                                placeholder="you@company.com" autocomplete="email" required />
-                        </div>
-                        <div class="form-field stagger-3">
-                            <label for="signup-password">Password</label>
-                            <input type="password" id="signup-password" name="new-password"
-                                placeholder="Min. 6 characters" autocomplete="new-password" required />
-                        </div>
-                        <div class="form-field stagger-3">
-                            <label for="signup-confirm">Confirm Password</label>
-                            <input type="password" id="signup-confirm" name="confirm-password"
-                                placeholder="Re-enter password" autocomplete="new-password" required />
-                        </div>
-
-                        <!-- Error message -->
-                        <div id="auth-error-signup" class="auth-error" style="display:none;"></div>
-
-                        <button type="submit" id="signup-submit-btn" class="btn-primary btn-login stagger-4">
-                            <span class="btn-shine"></span>
-                            Create Account
-                        </button>
-                    </form>
-
-                    <p class="login-signup-link stagger-5">
-                        Already have an account?
-                        <a href="#" onclick="switchAuthTab('login'); return false;">Sign in</a>
-                    </p>
-                </div>
-
-            </div>
-        </div>
-    </div>
-
-
+    <!-- SESSION GUARD: redirect to login.html if not authenticated -->
+    <script>
+    (async function () {
+        try {
+            var SUPABASE_URL = 'https://mjffvxkothiczayhkjcx.supabase.co';
+            var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qZmZ2eGtvdGhpY3pheWhramN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwOTEyNjEsImV4cCI6MjA4NzY2NzI2MX0.-g4vsENBmQnCk-M7c-k_lax-tTV2BOJEZxtFEDYxgEc';
+            var tokenData = JSON.parse(localStorage.getItem('sb-mjffvxkothiczayhkjcx-auth-token') || '{}');
+            var accessToken = (tokenData && tokenData.access_token) ? tokenData.access_token : '';
+            if (!accessToken) { window.location.href = 'login.html'; return; }
+            var res = await fetch(SUPABASE_URL + '/auth/v1/user', {
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken }
+            });
+            if (res.status !== 200) { window.location.href = 'login.html'; return; }
+        } catch (e) {
+            window.location.href = 'login.html';
+        }
+    })();
+    </script>
 
     <!-- ============================================================
      AUTHENTICATED SHELL (Sidebar + Topbar + Pages ...)

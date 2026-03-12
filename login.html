@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign In — CampaignBuddy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Montserrat:wght@600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles/global.css" />
+    <link rel="stylesheet" href="styles/components.css" />
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        html, body { height: 100%; margin: 0; overflow: hidden; }
+    </style>
+</head>
+
+<body>
+
+    <!-- ============================================================
+         LOGIN / SIGNUP PAGE — fully standalone
+         ============================================================ -->
+    <div class="page auth-page-wrap" style="display:flex;">
+
+        <!-- Left: Background image panel -->
+        <div class="login-image-panel">
+            <div class="login-image-bg"></div>
+            <div class="login-image-overlay"></div>
+            <div class="login-image-content">
+                <div class="login-logo-mark">
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                        <rect width="12" height="12" rx="3" fill="#fff" />
+                        <rect x="16" width="12" height="12" rx="3" fill="#fff" opacity="0.5" />
+                        <rect y="16" width="12" height="12" rx="3" fill="#fff" opacity="0.5" />
+                        <rect x="16" y="16" width="12" height="12" rx="3" fill="#fff" opacity="0.25" />
+                    </svg>
+                    <span class="logo-text-white" style="margin-left:10px;">CampaignBuddy</span>
+                </div>
+                <div class="login-headline-group">
+                    <h1 class="login-editorial-headline">AI-powered<br>outreach,<br>on autopilot.</h1>
+                    <p class="login-subheadline">Launch personalised email campaigns to thousands of ideal prospects — in minutes, not weeks.</p>
+                </div>
+                <div class="login-testimonial-card">
+                    <div class="testimonial-body">
+                        <p class="testimonial-quote">&ldquo;CampaignBuddy tripled our booked meetings in the first month. It just works.&rdquo;</p>
+                        <p class="testimonial-meta">— Head of Growth, B2B SaaS startup</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vertical divider -->
+        <div class="login-divider"></div>
+
+        <!-- Right: Form panel -->
+        <div class="login-form-panel">
+            <div class="login-form-inner">
+
+                <!-- Logo (mobile / small screens) -->
+                <div class="login-form-logo">
+                    <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+                        <rect width="12" height="12" rx="3" fill="#0A0A0A" />
+                        <rect x="16" width="12" height="12" rx="3" fill="#0A0A0A" opacity="0.5" />
+                        <rect y="16" width="12" height="12" rx="3" fill="#0A0A0A" opacity="0.5" />
+                        <rect x="16" y="16" width="12" height="12" rx="3" fill="#0A0A0A" opacity="0.25" />
+                    </svg>
+                    <span style="font-family:var(--font-heading);font-size:1rem;font-weight:700;color:var(--charcoal);margin-left:9px;">CampaignBuddy</span>
+                </div>
+
+                <!-- Tab switcher -->
+                <div class="auth-tabs">
+                    <button id="auth-tab-login" class="auth-tab active" onclick="switchTab('login')">Sign In</button>
+                    <button id="auth-tab-signup" class="auth-tab" onclick="switchTab('signup')">Create Account</button>
+                    <span class="auth-tab-indicator" id="auth-tab-indicator"></span>
+                </div>
+
+                <!-- ── LOGIN PANEL ── -->
+                <div id="panel-login">
+                    <div class="login-form-header" style="margin-top:28px;">
+                        <h2 class="login-form-title">Welcome back</h2>
+                        <p class="login-form-subtitle">Sign in to your account to continue.</p>
+                    </div>
+
+                    <!-- Google OAuth -->
+                    <button type="button" class="btn-google" id="google-btn" onclick="googleLogin()">
+                        <svg class="btn-google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                        </svg>
+                        Continue with Google
+                    </button>
+
+                    <!-- OR divider -->
+                    <div class="auth-or-divider">
+                        <span class="auth-or-line"></span>
+                        <span class="auth-or-text">or</span>
+                        <span class="auth-or-line"></span>
+                    </div>
+
+                    <form id="login-form" onsubmit="loginWithEmail(event)" novalidate>
+                        <div class="form-field">
+                            <label for="login-email">Email</label>
+                            <input type="email" id="login-email" placeholder="you@company.com" autocomplete="email" required />
+                        </div>
+                        <div class="form-field">
+                            <label for="login-password">Password</label>
+                            <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" required />
+                        </div>
+                        <div id="login-error" class="auth-error" style="display:none;"></div>
+                        <button type="submit" id="login-btn" class="btn-primary btn-login">
+                            <span class="btn-shine"></span>
+                            Sign In
+                        </button>
+                    </form>
+
+                    <p class="login-signup-link">
+                        Don&rsquo;t have an account? <a href="#" onclick="switchTab('signup'); return false;">Create one</a>
+                        &nbsp;&middot;&nbsp;
+                        <a href="#" onclick="switchTab('forgot'); return false;">Forgot password?</a>
+                    </p>
+                </div>
+
+                <!-- ── FORGOT PASSWORD PANEL ── -->
+                <div id="panel-forgot" style="display:none;">
+                    <div class="login-form-header" style="margin-top:28px;">
+                        <h2 class="login-form-title">Reset password</h2>
+                        <p class="login-form-subtitle">Enter your email and we&rsquo;ll send you a reset link.</p>
+                    </div>
+
+                    <div id="forgot-success" class="auth-success-state" style="display:none;">
+                        <div class="auth-success-icon">
+                            <svg width="40" height="40" viewBox="0 0 52 52" fill="none">
+                                <circle cx="26" cy="26" r="25" stroke="#1a7a4a" stroke-width="2"/>
+                                <path d="M14 26l8 8 16-16" stroke="#1a7a4a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <h3 class="auth-success-title">Check your email</h3>
+                        <p class="auth-success-body" id="forgot-success-msg">We sent a password reset link to your email.</p>
+                        <button class="btn-auth-primary" style="margin-top:24px;" onclick="switchTab('login')">Back to Sign In</button>
+                    </div>
+
+                    <form id="forgot-form" onsubmit="forgotPassword(event)" novalidate>
+                        <div class="form-field">
+                            <label for="forgot-email">Email address</label>
+                            <input type="email" id="forgot-email" placeholder="you@company.com" autocomplete="email" required />
+                        </div>
+                        <div id="forgot-error" class="auth-error" style="display:none;"></div>
+                        <button type="submit" id="forgot-btn" class="btn-primary btn-login">
+                            <span class="btn-shine"></span>
+                            Send Reset Link
+                        </button>
+                    </form>
+
+                    <p class="login-signup-link">
+                        <a href="#" onclick="switchTab('login'); return false;">&larr; Back to Sign In</a>
+                    </p>
+                </div>
+
+                <!-- ── SIGNUP PANEL ── -->
+                <div id="panel-signup" style="display:none;">
+                    <div class="login-form-header" style="margin-top:28px;">
+                        <h2 class="login-form-title">Create account</h2>
+                        <p class="login-form-subtitle">Start launching AI-powered campaigns today.</p>
+                    </div>
+
+                    <form id="signup-form" onsubmit="signupWithEmail(event)" novalidate>
+                        <div class="form-field">
+                            <label for="signup-email">Email</label>
+                            <input type="email" id="signup-email" placeholder="you@company.com" autocomplete="email" required />
+                        </div>
+                        <div class="form-field">
+                            <label for="signup-password">Password</label>
+                            <input type="password" id="signup-password" placeholder="Min. 6 characters" autocomplete="new-password" required />
+                        </div>
+                        <div class="form-field">
+                            <label for="signup-confirm">Confirm Password</label>
+                            <input type="password" id="signup-confirm" placeholder="Re-enter password" autocomplete="new-password" required />
+                        </div>
+                        <div id="signup-error" class="auth-error" style="display:none;"></div>
+                        <button type="submit" id="signup-btn" class="btn-primary btn-login">
+                            <span class="btn-shine"></span>
+                            Create Account
+                        </button>
+                    </form>
+
+                    <p class="login-signup-link">
+                        Already have an account?
+                        <a href="#" onclick="switchTab('login'); return false;">Sign in</a>
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         AUTH LOGIC — all self-contained in this page
+         ============================================================ -->
+    <script>
+    (function () {
+        'use strict';
+
+        var SUPABASE_URL  = 'https://mjffvxkothiczayhkjcx.supabase.co';
+        var SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qZmZ2eGtvdGhpY3pheWhramN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwOTEyNjEsImV4cCI6MjA4NzY2NzI2MX0.-g4vsENBmQnCk-M7c-k_lax-tTV2BOJEZxtFEDYxgEc';
+        var RESET_REDIRECT_URL = 'https://outreach-new-2-0.vercel.app/reset-password.html';
+        var APP_URL = 'index.html';
+
+        // Wait for Supabase CDN
+        function waitForSupabase(cb) {
+            if (window.supabase && window.supabase.createClient) {
+                cb(window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON));
+            } else {
+                setTimeout(function () { waitForSupabase(cb); }, 50);
+            }
+        }
+
+        waitForSupabase(function (client) {
+
+            // If user is already logged in, skip login page entirely
+            client.auth.getSession().then(function (res) {
+                if (res.data && res.data.session) {
+                    window.location.href = APP_URL;
+                }
+            });
+
+            // Also handle OAuth callback (Google redirect lands here)
+            client.auth.onAuthStateChange(function (event, session) {
+                if (event === 'SIGNED_IN' && session) {
+                    window.location.href = APP_URL;
+                }
+            });
+
+            // ── Tab switcher ──────────────────────────────────────
+            window.switchTab = function (tab) {
+                var panels = ['login', 'signup', 'forgot'];
+                panels.forEach(function (p) {
+                    var el = document.getElementById('panel-' + p);
+                    if (el) el.style.display = (p === tab) ? 'block' : 'none';
+                });
+
+                // Clear all errors
+                panels.forEach(function (p) {
+                    var err = document.getElementById(p + '-error');
+                    if (err) { err.textContent = ''; err.style.display = 'none'; }
+                });
+
+                // Update tab buttons
+                var tabLogin  = document.getElementById('auth-tab-login');
+                var tabSignup = document.getElementById('auth-tab-signup');
+                if (tabLogin)  tabLogin.classList.toggle('active', tab === 'login');
+                if (tabSignup) tabSignup.classList.toggle('active', tab === 'signup');
+
+                // Reset forgot form when re-opening
+                if (tab === 'forgot') {
+                    var form = document.getElementById('forgot-form');
+                    var succ = document.getElementById('forgot-success');
+                    if (form) form.style.display = 'block';
+                    if (succ) succ.style.display = 'none';
+                }
+            };
+
+            // ── Email + Password Login ────────────────────────────
+            window.loginWithEmail = async function (e) {
+                e.preventDefault();
+                var email = document.getElementById('login-email').value.trim();
+                var pass  = document.getElementById('login-password').value;
+                var btn   = document.getElementById('login-btn');
+
+                clearError('login');
+                if (!email || !pass) { showError('login', 'Please enter your email and password.'); return; }
+
+                setLoading(btn, true, 'Signing in\u2026');
+
+                try {
+                    var res = await client.auth.signInWithPassword({ email: email, password: pass });
+                    if (res.error) {
+                        showError('login', friendly(res.error.message));
+                        setLoading(btn, false, 'Sign In');
+                    } else {
+                        // onAuthStateChange fires → redirect to index.html
+                    }
+                } catch (err) {
+                    showError('login', 'Network error. Please check your connection.');
+                    setLoading(btn, false, 'Sign In');
+                }
+            };
+
+            // ── Signup ────────────────────────────────────────────
+            window.signupWithEmail = async function (e) {
+                e.preventDefault();
+                var email   = document.getElementById('signup-email').value.trim();
+                var pass    = document.getElementById('signup-password').value;
+                var confirm = document.getElementById('signup-confirm').value;
+                var btn     = document.getElementById('signup-btn');
+
+                clearError('signup');
+                if (!email || !pass || !confirm) { showError('signup', 'Please fill in all fields.'); return; }
+                if (pass.length < 6) { showError('signup', 'Password must be at least 6 characters.'); return; }
+                if (pass !== confirm) { showError('signup', 'Passwords do not match.'); return; }
+
+                setLoading(btn, true, 'Creating account\u2026');
+
+                try {
+                    var res = await client.auth.signUp({ email: email, password: pass });
+                    setLoading(btn, false, 'Create Account');
+                    if (res.error) {
+                        showError('signup', friendly(res.error.message));
+                    } else {
+                        // Show success — user needs to confirm email
+                        var panel = document.getElementById('panel-signup');
+                        if (panel) {
+                            panel.innerHTML =
+                                '<div class="auth-success-state">' +
+                                    '<div class="auth-success-icon">' +
+                                        '<svg width="40" height="40" viewBox="0 0 52 52" fill="none">' +
+                                            '<circle cx="26" cy="26" r="25" stroke="#1a7a4a" stroke-width="2"/>' +
+                                            '<path d="M14 26l8 8 16-16" stroke="#1a7a4a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+                                        '</svg>' +
+                                    '</div>' +
+                                    '<h3 class="auth-success-title">Check your inbox</h3>' +
+                                    '<p class="auth-success-body">We sent a confirmation link to <strong>' + esc(email) + '</strong>. Click the link to activate your account, then come back to sign in.</p>' +
+                                    '<button class="btn-auth-primary" style="margin-top:24px;" onclick="switchTab(\'login\')">Back to Sign In</button>' +
+                                '</div>';
+                        }
+                    }
+                } catch (err) {
+                    setLoading(btn, false, 'Create Account');
+                    showError('signup', 'Network error. Please check your connection.');
+                }
+            };
+
+            // ── Forgot Password ───────────────────────────────────
+            window.forgotPassword = async function (e) {
+                e.preventDefault();
+                var email = document.getElementById('forgot-email').value.trim();
+                var btn   = document.getElementById('forgot-btn');
+
+                clearError('forgot');
+                if (!email) { showError('forgot', 'Please enter your email address.'); return; }
+
+                setLoading(btn, true, 'Sending\u2026');
+
+                try {
+                    var res = await client.auth.resetPasswordForEmail(email, { redirectTo: RESET_REDIRECT_URL });
+                    setLoading(btn, false, 'Send Reset Link');
+                    if (res.error) {
+                        showError('forgot', friendly(res.error.message));
+                    } else {
+                        document.getElementById('forgot-form').style.display = 'none';
+                        document.getElementById('forgot-success').style.display = 'block';
+                        document.getElementById('forgot-success-msg').innerHTML =
+                            'We sent a reset link to <strong>' + esc(email) + '</strong>. Check your inbox and follow the instructions.';
+                    }
+                } catch (err) {
+                    setLoading(btn, false, 'Send Reset Link');
+                    showError('forgot', 'Network error. Please check your connection.');
+                }
+            };
+
+            // ── Google OAuth ──────────────────────────────────────
+            window.googleLogin = async function () {
+                var btn = document.getElementById('google-btn');
+                if (btn) { btn.disabled = true; btn.style.opacity = '0.75'; }
+
+                try {
+                    var res = await client.auth.signInWithOAuth({
+                        provider: 'google',
+                        options: { redirectTo: 'https://outreach-new-2-0.vercel.app' }
+                    });
+                    if (res.error) {
+                        if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+                        showError('login', res.error.message || 'Google sign-in failed.');
+                    }
+                } catch (err) {
+                    if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+                    showError('login', 'Google sign-in failed. Please try again.');
+                }
+            };
+
+            // ── Helpers ───────────────────────────────────────────
+            function showError(form, msg) {
+                var el = document.getElementById(form + '-error');
+                if (el) { el.textContent = msg; el.style.display = 'flex'; }
+            }
+            function clearError(form) {
+                var el = document.getElementById(form + '-error');
+                if (el) { el.textContent = ''; el.style.display = 'none'; }
+            }
+            function setLoading(btn, loading, label) {
+                if (!btn) return;
+                btn.disabled = loading;
+                btn.textContent = label;
+                btn.style.opacity = loading ? '0.75' : '1';
+            }
+            function friendly(msg) {
+                if (!msg) return 'An unexpected error occurred.';
+                var m = msg.toLowerCase();
+                if (m.includes('invalid login') || m.includes('invalid credentials') || m.includes('email not confirmed'))
+                    return 'Invalid email or password. Please try again.';
+                if (m.includes('user already registered') || m.includes('already been registered'))
+                    return 'An account with this email already exists. Try signing in.';
+                if (m.includes('rate limit'))
+                    return 'Too many attempts. Please wait a moment and try again.';
+                if (m.includes('network') || m.includes('fetch'))
+                    return 'Network error. Please check your connection.';
+                return msg;
+            }
+            function esc(str) {
+                return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            }
+        });
+    })();
+    </script>
+
+</body>
+</html>
