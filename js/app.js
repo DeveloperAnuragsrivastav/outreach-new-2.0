@@ -133,12 +133,69 @@ function navigateTo(page) {
     finishLoading();
     if (page === 'dashboard') initDashboard();
     if (page === 'campaign-report') initReport();
-    if (page === 'new-campaign') initSlider();
+    if (page === 'new-campaign') { resetCampaignForm(); initSlider(); }
     if (page === 'analytics') initAnalyticsPage();
     initScrollReveal();
     initIcons();
   }, 50);
 
+}
+
+// ── Campaign Form Reset ───────────────────────────────────────
+function resetCampaignForm() {
+  // Clear all text inputs and textareas
+  var textFields = [
+    'campaign-name', 'new-goal', 'new-product-name', 'new-value-proposition',
+    'new-cta-link', 'icp-title', 'icp-industry', 'icp-geo',
+    'new-industries', 'new-job-titles', 'new-competitor-displacement',
+    'sender-name', 'sender-role', 'sender-email', 'new-social-proof',
+    'new-lead-list-name'
+  ];
+  textFields.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+
+  // Reset selects to first option
+  var selectFields = ['campaign-goal', 'icp-size'];
+  selectFields.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.selectedIndex = 0;
+  });
+
+  // Reset audience source radio to default (existing_lead)
+  var defaultRadio = document.querySelector('input[name="audience-source"][value="existing_lead"]');
+  if (defaultRadio) {
+    defaultRadio.checked = true;
+    toggleAudienceSource('new');
+  }
+
+  // Reset file input
+  var fileInput = document.getElementById('new-lead-file');
+  if (fileInput) fileInput.value = '';
+
+  // Reset slider to 250
+  var slider = document.getElementById('campaign-scale');
+  if (slider) { slider.value = 250; updateSlider(slider); }
+
+  // Reset wizard — hide all steps except step 1
+  document.querySelectorAll('[data-wizard-step]').forEach(function(el) {
+    var step = parseInt(el.dataset.wizardStep);
+    if (step === 1) {
+      el.classList.add('step-visible');
+      var btn = el.querySelector('.wizard-next-btn');
+      if (btn) btn.style.display = '';
+    } else {
+      el.classList.remove('step-visible');
+    }
+  });
+
+  // Hide error alert
+  var errorAlert = document.getElementById('form-error-alert');
+  if (errorAlert) errorAlert.style.display = 'none';
+
+  // Trigger preview update
+  if (typeof updatePreview === 'function') updatePreview();
 }
 
 // ── Login handler ──────────────────────────────────────────────
