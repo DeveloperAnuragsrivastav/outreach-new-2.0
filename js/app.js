@@ -597,7 +597,7 @@ async function loadAnalyticsCampaigns() {
   select.disabled = true;
 
   try {
-    var data = await supabaseRest('campaigns?select=campaign_name,created_at&order=launched_at.desc');
+    var data = await supabaseRest('campaigns?select=campaign_name,created_at&order=created_at.desc');
 
     // Extract unique campaign names and store created_at (Supabase may return duplicates)
     var seen = {};
