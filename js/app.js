@@ -157,7 +157,7 @@ function resetCampaignForm() {
   });
 
   // Reset selects to first option
-  var selectFields = ['campaign-goal', 'icp-size'];
+  var selectFields = ['icp-size'];
   selectFields.forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.selectedIndex = 0;
@@ -321,7 +321,6 @@ async function openConfirmModal() {
   // Collect all form data
   const payload = {
     campaign_name: name,
-    primary_goal: document.getElementById('campaign-goal')?.value || '',
     goal: document.getElementById('new-goal')?.value || '',
     job_titles: audienceSource === 'existing_lead' ? (document.getElementById('new-job-titles')?.value || '') : '',
     industries: audienceSource === 'existing_lead' ? (document.getElementById('new-industries')?.value || '') : '',
