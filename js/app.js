@@ -6,18 +6,14 @@
 let sidebarCollapsed = false;
 let sendgridApiKey = null;
 
-// ── SendGrid Gate ──────────────────────────────────────────────
-function sgGateYes() {
-  document.getElementById('sg-gate-btns').style.display = 'none';
-  document.getElementById('sg-gate-input-area').style.display = 'block';
+// ── Welcome Gate (API + Sender Auth) ───────────────────────────
+function showApiInput(btn) {
+  document.getElementById('gate-api-btns').style.display = 'none';
+  document.getElementById('gate-api-input-area').style.display = 'block';
   setTimeout(() => document.getElementById('sg-api-key-input').focus(), 50);
 }
 
-function sgGateNo() {
-  window.open('https://sendgrid.com', '_blank');
-}
-
-function sgGateSubmit() {
+function submitApiKey() {
   const input = document.getElementById('sg-api-key-input');
   const errorEl = document.getElementById('sg-gate-error');
   const key = input.value.trim();
@@ -28,13 +24,19 @@ function sgGateSubmit() {
     return;
   }
 
-  // Valid key
+  // Valid key -> save it and move to step 2 (Verification)
   errorEl.style.display = 'none';
   input.style.borderColor = '';
   sendgridApiKey = key;
 
-  // Hide gate, reveal campaign form
-  document.getElementById('sendgrid-gate').style.display = 'none';
+  document.getElementById('gate-step-1').classList.remove('active');
+  document.getElementById('gate-step-2').classList.add('active');
+  initIcons();
+}
+
+function finishWelcomeGate() {
+  // Hide the entire gate, reveal campaign form
+  document.getElementById('welcome-gate').style.display = 'none';
   document.getElementById('new-campaign-header').style.display = '';
   document.getElementById('wizard-layout').style.display = '';
   initIcons();
