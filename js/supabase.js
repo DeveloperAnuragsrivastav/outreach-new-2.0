@@ -14,9 +14,8 @@ const SUPABASE_HEADERS = {
 };
 
 // ── State ─────────────────────────────────────────────────────
-let _pollInterval = null;
-let _detailPollInterval = null;
 let currentDetailCampaign = null;
+let _historyLoaded = false;  // track if history has been loaded at least once
 
 // ── Generic Supabase REST Helper ──────────────────────────────
 async function supabaseRest(path, options = {}) {
@@ -91,47 +90,74 @@ function flashLiveIndicator() {
 
 // ══════════════════════════════════════════════════════════════
 //  CAMPAIGN HISTORY (Reports page) — from campaignsdata table
+//  Loads ONCE on page visit. Use refreshCampaignHistory() to reload.
 // ══════════════════════════════════════════════════════════════
 
-async function loadCampaignHistory() {
+async function loadCampaignHistory(forceRefresh) {
   var tbody = document.getElementById('campaign-tbody');
   if (!tbody) return;
 
-  if (!tbody.dataset.loaded) {
-    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:32px;color:#999;">Loading campaigns...</td></tr>';
+  // Show loading state
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:#999;">Loading campaigns...</td></tr>';
+
+  // Disable refresh button while loading
+  var refreshBtn = document.getElementById('history-refresh-btn');
+  if (refreshBtn) {
+    refreshBtn.disabled = true;
+    refreshBtn.innerHTML = '<i data-lucide="loader-2" width="14" height="14" style="animation:spin 1s linear infinite;vertical-align:middle;margin-right:4px;"></i> Refreshing…';
   }
 
   try {
-    var data = await supabaseRest('campaignsdata?select=campaign_name,created_at&order=created_at.desc');
+    // Fetch campaign_name, created_at, to (sent to), from (sent by)
+    var data = await supabaseRest('campaignsdata?select=campaign_name,created_at,"to","from"&order=created_at.desc');
     renderCampaignHistory(data || []);
-    tbody.dataset.loaded = 'true';
+    _historyLoaded = true;
     setLiveIndicator(true);
     flashLiveIndicator();
   } catch (err) {
     console.error('Error loading campaign history:', err);
-    if (!tbody.dataset.loaded) {
-      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:32px;color:#e74c3c;">Failed to load campaigns. Please try again.</td></tr>';
-    }
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:#e74c3c;">Failed to load campaigns. Click Refresh to try again.</td></tr>';
     setLiveIndicator(false);
+  } finally {
+    // Re-enable refresh button
+    if (refreshBtn) {
+      refreshBtn.disabled = false;
+      refreshBtn.innerHTML = '<i data-lucide="refresh-cw" width="14" height="14" style="vertical-align:middle;margin-right:4px;"></i> Refresh';
+      if (window.lucide) window.lucide.createIcons();
+    }
   }
 }
+
+// Called by the Refresh button in the UI
+window.refreshCampaignHistory = function () {
+  loadCampaignHistory(true);
+};
 
 function renderCampaignHistory(rows) {
   var tbody = document.getElementById('campaign-tbody');
   if (!tbody) return;
 
   if (!rows || rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:32px;color:#999;">No campaigns found.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:#999;">No campaigns found.</td></tr>';
     return;
   }
 
-  // Group by campaign_name
+  // Group rows by campaign_name — collect unique to/from values per campaign
   var grouped = {};
   rows.forEach(function (row) {
     var name = row.campaign_name || 'Unnamed Campaign';
-    if (!grouped[name]) grouped[name] = { count: 0, firstDate: row.created_at };
+    if (!grouped[name]) {
+      grouped[name] = {
+        count: 0,
+        firstDate: row.created_at,
+        toSet: new Set(),
+        fromSet: new Set()
+      };
+    }
     grouped[name].count++;
     if (row.created_at < grouped[name].firstDate) grouped[name].firstDate = row.created_at;
+    if (row['to'])   grouped[name].toSet.add(row['to']);
+    if (row['from']) grouped[name].fromSet.add(row['from']);
   });
 
   var campaigns = Object.entries(grouped).sort(function (a, b) {
@@ -141,6 +167,16 @@ function renderCampaignHistory(rows) {
   tbody.innerHTML = '';
   campaigns.forEach(function (entry) {
     var name = entry[0], info = entry[1];
+
+    // Format to/from — show up to 2 values then "+N more"
+    function formatSet(set) {
+      var arr = Array.from(set).filter(Boolean);
+      if (arr.length === 0) return '<span style="color:#bbb;">—</span>';
+      var display = arr.slice(0, 2).map(function(v) { return escapeHtml(v); }).join(', ');
+      if (arr.length > 2) display += ' <span style="color:#999;font-size:0.75rem;">+' + (arr.length - 2) + ' more</span>';
+      return display;
+    }
+
     var tr = document.createElement('tr');
     tr.className = 'table-row-anim';
     tr.dataset.campaign = name;
@@ -149,7 +185,9 @@ function renderCampaignHistory(rows) {
         '<span class="campaign-name">' + escapeHtml(name) + '</span>' +
         '<span class="campaign-date">Started ' + formatDate(info.firstDate) + '</span>' +
       '</td>' +
-      '<td class="sent-count-cell" id="sent-' + slugify(name) + '">' + info.count.toLocaleString() + '</td>' +
+      '<td class="sent-count-cell">' + info.count.toLocaleString() + '</td>' +
+      '<td class="history-to-cell">' + formatSet(info.toSet) + '</td>' +
+      '<td class="history-from-cell">' + formatSet(info.fromSet) + '</td>' +
       '<td>' +
         '<button class="btn-open-detail" onclick="openCampaignDetail(\'' + escapeHtml(name).replace(/'/g, "\\'") + '\')">' +
           'Open <i data-lucide="arrow-right" width="14" height="14" style="vertical-align:middle;margin-left:4px;"></i>' +
@@ -159,15 +197,6 @@ function renderCampaignHistory(rows) {
   });
 
   if (window.lucide) window.lucide.createIcons();
-}
-
-function startHistoryPolling() {
-  stopHistoryPolling();
-  _pollInterval = setInterval(function () { loadCampaignHistory(); }, 8000);
-}
-
-function stopHistoryPolling() {
-  if (_pollInterval) { clearInterval(_pollInterval); _pollInterval = null; }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -182,7 +211,6 @@ async function openCampaignDetail(campaignName) {
 
   navigateTo('campaign-detail');
   await loadCampaignDetail(campaignName);
-  startDetailPolling(campaignName);
 }
 
 async function loadCampaignDetail(campaignName) {
@@ -190,21 +218,16 @@ async function loadCampaignDetail(campaignName) {
   var countEl = document.getElementById('detail-sent-count');
   if (!tbody) return;
 
-  if (!tbody.dataset.loaded) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:32px;color:#999;">Loading emails...</td></tr>';
-  }
-  if (countEl && !tbody.dataset.loaded) countEl.textContent = '…';
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:32px;color:#999;">Loading emails...</td></tr>';
+  if (countEl) countEl.textContent = '…';
 
   try {
     var encoded = encodeURIComponent(campaignName);
     var data = await supabaseRest('campaignsdata?campaign_name=eq.' + encoded + '&select=email_subject,email_body,created_at&order=created_at.desc');
     renderCampaignDetail(data || []);
-    tbody.dataset.loaded = 'true';
   } catch (err) {
     console.error('Error loading campaign detail:', err);
-    if (!tbody.dataset.loaded) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:32px;color:#e74c3c;">Failed to load emails.</td></tr>';
-    }
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:32px;color:#e74c3c;">Failed to load emails.</td></tr>';
   }
 }
 
@@ -281,32 +304,20 @@ window.closeEmailPreviewOnBackdrop = function (e) {
   }
 };
 
-function startDetailPolling(campaignName) {
-  stopDetailPolling();
-  _detailPollInterval = setInterval(function () { loadCampaignDetail(campaignName); }, 8000);
-}
-
-function stopDetailPolling() {
-  if (_detailPollInterval) { clearInterval(_detailPollInterval); _detailPollInterval = null; }
-}
-
 // ── Hook into existing initReport ────────────────────────────
+// Load campaign history ONCE when the user navigates to the page.
+// No polling — use the Refresh button to reload.
 var _originalInitReport = window.initReport;
 window.initReport = function () {
   if (_originalInitReport) _originalInitReport();
   loadCampaignHistory();
-  startHistoryPolling();
 };
 
 // ── Cleanup on page leave ─────────────────────────────────────
 var _originalNavigateTo = window.navigateTo;
 window.navigateTo = function (page) {
   if (page !== 'campaign-detail') {
-    stopDetailPolling();
     currentDetailCampaign = null;
-  }
-  if (page !== 'campaign-report') {
-    stopHistoryPolling();
   }
   _originalNavigateTo(page);
 };

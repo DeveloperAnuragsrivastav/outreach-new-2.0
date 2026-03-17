@@ -587,9 +587,14 @@
                             <h1 class="report-title">Campaign History</h1>
                             <div class="report-title-underline"></div>
                         </div>
-                        <div class="realtime-indicator" id="realtime-indicator">
-                            <span class="realtime-dot"></span>
-                            <span class="realtime-label">Live</span>
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <button id="history-refresh-btn" onclick="refreshCampaignHistory()" class="btn-open-detail" style="display:inline-flex;align-items:center;gap:6px;font-size:0.8125rem;font-weight:500;padding:8px 16px;border-radius:100px;">
+                                <i data-lucide="refresh-cw" width="14" height="14"></i> Refresh
+                            </button>
+                            <div class="realtime-indicator" id="realtime-indicator">
+                                <span class="realtime-dot"></span>
+                                <span class="realtime-label">Live</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -602,13 +607,15 @@
                                 <tr>
                                     <th>Campaign Name</th>
                                     <th>Sent</th>
+                                    <th>Sent To</th>
+                                    <th>Sent From</th>
                                     <th></th>
                                 </tr>
                             </thead>
                             <tbody id="campaign-tbody">
                                 <tr>
-                                    <td colspan="3" style="text-align:center; padding: 32px; color: #999;">
-                                        <span id="history-loading">Loading campaigns...</span>
+                                    <td colspan="5" style="text-align:center; padding: 32px; color: #999;">
+                                        Loading campaigns...
                                     </td>
                                 </tr>
                             </tbody>
