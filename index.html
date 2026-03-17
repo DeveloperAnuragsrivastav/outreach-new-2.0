@@ -289,12 +289,12 @@
                 <a href="#" class="sidebar-nav-item" data-page="campaign-report"
                     onclick="navigateTo('campaign-report')">
                     <span class="nav-icon"><i data-lucide="bar-chart-2" width="18" height="18"></i></span>
-                    <span class="nav-label">Reports</span>
+                    <span class="nav-label">Campaign History</span>
                     <span class="nav-active-bar"></span>
                 </a>
                 <a href="#" class="sidebar-nav-item" data-page="analytics" onclick="navigateTo('analytics')">
                     <span class="nav-icon"><i data-lucide="pie-chart" width="18" height="18"></i></span>
-                    <span class="nav-label">Analytics</span>
+                    <span class="nav-label">Outreach Analytics </span>
                     <span class="nav-active-bar"></span>
                 </a>
                 <a href="#" class="sidebar-nav-item" data-page="campaign-detail" id="nav-campaign-detail"
@@ -425,14 +425,25 @@
                                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                         <input type="radio" name="audience-source" value="ai" checked
                                             onchange="toggleAudienceSource('new')" style="width: auto;" />
-                                        <span>Use AI Audience</span>
+                                        <span>Use Exisiting Lead</span>
                                     </label>
                                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                         <input type="radio" name="audience-source" value="custom"
                                             onchange="toggleAudienceSource('new')" style="width: auto;" />
                                         <span>Click if you have your own leads</span>
                                     </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="radio" name="audience-source" value="scrap"
+                                            onchange="toggleAudienceSource('new')" style="width: auto;" />
+                                        <span>Scrap Realtime Leads</span>
+                                    </label>
                                 </div>
+                            </div>
+
+                            <!-- Scrap Leads Section (Hidden by default) -->
+                            <div id="scrap-leads-section"
+                                style="display: none; background: var(--warm-stone); padding: 20px; border-radius: var(--radius-md); border: 1px dashed var(--charcoal-20); margin-bottom: 24px; text-align: center;">
+                                <p style="font-weight: 600; color: var(--charcoal);">This feature is coming soon</p>
                             </div>
 
                             <!-- Custom Leads Section (Hidden by default) -->
@@ -657,7 +668,7 @@
                 <div class="report-header">
                     <div class="report-title-row">
                         <div>
-                            <h1 class="report-title">SendGrid Analytics</h1>
+                            <h1 class="report-title">Outreach Analytics</h1>
                             <div class="report-title-underline"></div>
                         </div>
                         <button class="btn-primary" id="fetch-analytics-btn" onclick="fetchAnalytics()"
@@ -799,14 +810,25 @@
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                 <input type="radio" name="edit-audience-source" value="ai" checked
                                     onchange="toggleAudienceSource('edit')" style="width: auto;" />
-                                <span>Use AI Audience</span>
+                                <span>Use Existing Leads</span>
                             </label>
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                 <input type="radio" name="edit-audience-source" value="custom"
                                     onchange="toggleAudienceSource('edit')" style="width: auto;" />
                                 <span>Click if you have your own leads</span>
                             </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="radio" name="edit-audience-source" value="scrap"
+                                    onchange="toggleAudienceSource('edit')" style="width: auto;" />
+                                <span>Scrap Realtime Leads</span>
+                            </label>
                         </div>
+                    </div>
+
+                    <!-- Scrap Leads Section (Hidden by default) -->
+                    <div id="edit-scrap-leads-section"
+                        style="display: none; background: var(--warm-stone); padding: 20px; border-radius: var(--radius-md); border: 1px dashed var(--charcoal-20); margin-bottom: 24px; text-align: center;">
+                        <p style="font-weight: 600; color: var(--charcoal);">This feature is coming soon</p>
                     </div>
 
                     <!-- Custom Leads Section (Hidden by default) -->

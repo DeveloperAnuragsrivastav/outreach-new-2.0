@@ -460,13 +460,20 @@ function toggleAudienceSource(context = 'new') {
   const source = document.querySelector(`input[name="${context === 'new' ? '' : 'edit-'}audience-source"]:checked`).value;
   const aiSection = document.getElementById(`${context === 'new' ? '' : 'edit-'}ai-audience-section`);
   const customSection = document.getElementById(`${context === 'new' ? 'custom' : 'edit-custom'}-leads-section`);
+  const scrapSection = document.getElementById(`${context === 'new' ? 'scrap' : 'edit-scrap'}-leads-section`);
 
   if (source === 'ai') {
-    aiSection.style.display = 'block';
-    customSection.style.display = 'none';
-  } else {
-    aiSection.style.display = 'none';
-    customSection.style.display = 'block';
+    if (aiSection) aiSection.style.display = 'block';
+    if (customSection) customSection.style.display = 'none';
+    if (scrapSection) scrapSection.style.display = 'none';
+  } else if (source === 'custom') {
+    if (aiSection) aiSection.style.display = 'none';
+    if (customSection) customSection.style.display = 'block';
+    if (scrapSection) scrapSection.style.display = 'none';
+  } else if (source === 'scrap') {
+    if (aiSection) aiSection.style.display = 'none';
+    if (customSection) customSection.style.display = 'none';
+    if (scrapSection) scrapSection.style.display = 'block';
   }
 }
 
