@@ -578,6 +578,7 @@ function initIcons() {
 
 // ── Analytics (Campaign Selector + Webhook) ─────────────────────
 var _analyticsCampaignsLoaded = false;
+var _analyticsCampaignMap = {};  // { campaign_name: created_at }
 var ANALYTICS_WEBHOOK_URL = 'https://n8n.gignaati.com/webhook/campaign-analytics';
 
 // Called every time the user navigates to the Analytics page
@@ -596,17 +597,19 @@ async function loadAnalyticsCampaigns() {
   select.disabled = true;
 
   try {
-    var data = await supabaseRest('campaigns?select=campaign_name&order=launched_at.desc');
+    var data = await supabaseRest('campaigns?select=campaign_name,created_at&order=launched_at.desc');
 
-    // Extract unique campaign names (Supabase may return duplicates)
+    // Extract unique campaign names and store created_at (Supabase may return duplicates)
     var seen = {};
     var uniqueNames = [];
+    _analyticsCampaignMap = {};
     if (Array.isArray(data)) {
       data.forEach(function (row) {
         var name = row.campaign_name;
         if (name && !seen[name]) {
           seen[name] = true;
           uniqueNames.push(name);
+          _analyticsCampaignMap[name] = row.created_at || '';
         }
       });
     }
@@ -675,7 +678,7 @@ async function fetchAnalyticsForCampaign(campaignName) {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      body: JSON.stringify({ campaign_name: campaignName })
+      body: JSON.stringify({ campaign_name: campaignName, created_at: _analyticsCampaignMap[campaignName] || '' })
     });
 
     if (!response.ok) {
