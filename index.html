@@ -607,14 +607,12 @@
                                 <tr>
                                     <th>Campaign Name</th>
                                     <th>Sent</th>
-                                    <th>Sent To</th>
-                                    <th>Sent From</th>
                                     <th></th>
                                 </tr>
                             </thead>
                             <tbody id="campaign-tbody">
                                 <tr>
-                                    <td colspan="5" style="text-align:center; padding: 32px; color: #999;">
+                                    <td colspan="3" style="text-align:center; padding: 32px; color: #999;">
                                         Loading campaigns...
                                     </td>
                                 </tr>
@@ -995,8 +993,13 @@
                             style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--charcoal-08);">
                             <div style="font-size: 0.875rem; color: var(--charcoal);">
                                 <span
+                                    style="color: var(--slate); font-weight: 500; min-width: 48px; display: inline-block;">From:</span>
+                                <span id="preview-modal-from" style="color: var(--slate);">—</span>
+                            </div>
+                            <div style="font-size: 0.875rem; color: var(--charcoal);">
+                                <span
                                     style="color: var(--slate); font-weight: 500; min-width: 48px; display: inline-block;">To:</span>
-                                <span style="color: var(--slate);">Prospect</span>
+                                <span id="preview-modal-to" style="color: var(--slate);">—</span>
                             </div>
                             <div style="font-size: 0.875rem; color: var(--charcoal);">
                                 <span

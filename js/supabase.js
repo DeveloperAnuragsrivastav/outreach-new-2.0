@@ -98,7 +98,7 @@ async function loadCampaignHistory(forceRefresh) {
   if (!tbody) return;
 
   // Show loading state
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:#999;">Loading campaigns...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:32px;color:#999;">Loading campaigns...</td></tr>';
 
   // Disable refresh button while loading
   var refreshBtn = document.getElementById('history-refresh-btn');
@@ -108,15 +108,15 @@ async function loadCampaignHistory(forceRefresh) {
   }
 
   try {
-    // Fetch campaign_name, created_at, to (sent to), from (sent by)
-    var data = await supabaseRest('campaignsdata?select=campaign_name,created_at,"to","from"&order=created_at.desc');
+    // Fetch campaign_name and created_at for the history list
+    var data = await supabaseRest('campaignsdata?select=campaign_name,created_at&order=created_at.desc');
     renderCampaignHistory(data || []);
     _historyLoaded = true;
     setLiveIndicator(true);
     flashLiveIndicator();
   } catch (err) {
     console.error('Error loading campaign history:', err);
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:#e74c3c;">Failed to load campaigns. Click Refresh to try again.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:32px;color:#e74c3c;">Failed to load campaigns. Click Refresh to try again.</td></tr>';
     setLiveIndicator(false);
   } finally {
     // Re-enable refresh button
@@ -138,26 +138,19 @@ function renderCampaignHistory(rows) {
   if (!tbody) return;
 
   if (!rows || rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:#999;">No campaigns found.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:32px;color:#999;">No campaigns found.</td></tr>';
     return;
   }
 
-  // Group rows by campaign_name — collect unique to/from values per campaign
+  // Group rows by campaign_name
   var grouped = {};
   rows.forEach(function (row) {
     var name = row.campaign_name || 'Unnamed Campaign';
     if (!grouped[name]) {
-      grouped[name] = {
-        count: 0,
-        firstDate: row.created_at,
-        toSet: new Set(),
-        fromSet: new Set()
-      };
+      grouped[name] = { count: 0, firstDate: row.created_at };
     }
     grouped[name].count++;
     if (row.created_at < grouped[name].firstDate) grouped[name].firstDate = row.created_at;
-    if (row['to'])   grouped[name].toSet.add(row['to']);
-    if (row['from']) grouped[name].fromSet.add(row['from']);
   });
 
   var campaigns = Object.entries(grouped).sort(function (a, b) {
@@ -186,8 +179,6 @@ function renderCampaignHistory(rows) {
         '<span class="campaign-date">Started ' + formatDate(info.firstDate) + '</span>' +
       '</td>' +
       '<td class="sent-count-cell">' + info.count.toLocaleString() + '</td>' +
-      '<td class="history-to-cell">' + formatSet(info.toSet) + '</td>' +
-      '<td class="history-from-cell">' + formatSet(info.fromSet) + '</td>' +
       '<td>' +
         '<button class="btn-open-detail" onclick="openCampaignDetail(\'' + escapeHtml(name).replace(/'/g, "\\'") + '\')">' +
           'Open <i data-lucide="arrow-right" width="14" height="14" style="vertical-align:middle;margin-left:4px;"></i>' +
@@ -223,7 +214,8 @@ async function loadCampaignDetail(campaignName) {
 
   try {
     var encoded = encodeURIComponent(campaignName);
-    var data = await supabaseRest('campaignsdata?campaign_name=eq.' + encoded + '&select=email_subject,email_body,created_at&order=created_at.desc');
+    // Include 'to' and 'from' fields for the email preview modal
+    var data = await supabaseRest('campaignsdata?campaign_name=eq.' + encoded + '&select=email_subject,email_body,created_at,"to","from"&order=created_at.desc');
     renderCampaignDetail(data || []);
   } catch (err) {
     console.error('Error loading campaign detail:', err);
@@ -252,6 +244,8 @@ function renderCampaignDetail(rows) {
 
     var safeSubject = escapeHtml(row.email_subject || '—');
     var safeBody = escapeHtml(row.email_body || '');
+    var safeTo = escapeHtml(row['to'] || '—');
+    var safeFrom = escapeHtml(row['from'] || '—');
     var dateStr = formatDateTime(row.created_at);
 
     tr.innerHTML =
@@ -269,6 +263,8 @@ function renderCampaignDetail(rows) {
             '<div class="mod-subject">' + safeSubject + '</div>' +
             '<div class="mod-body">' + safeBody + '</div>' +
             '<div class="mod-date">' + dateStr + '</div>' +
+            '<div class="mod-to">' + safeTo + '</div>' +
+            '<div class="mod-from">' + safeFrom + '</div>' +
           '</template>' +
         '</div>' +
       '</td>';
@@ -286,10 +282,17 @@ window.openEmailPreviewModal = function (btn) {
   var subject = content.querySelector('.mod-subject').innerHTML;
   var body = content.querySelector('.mod-body').innerHTML;
   var date = content.querySelector('.mod-date').innerHTML;
+  var toEl = content.querySelector('.mod-to');
+  var to = toEl ? toEl.innerHTML : '—';
+  var fromEl = content.querySelector('.mod-from');
+  var from = fromEl ? fromEl.innerHTML : '—';
 
   document.getElementById('preview-modal-subject').innerHTML = subject;
   document.getElementById('preview-modal-body').innerHTML = body;
   document.getElementById('preview-modal-date').innerHTML = date;
+  document.getElementById('preview-modal-to').innerHTML = to;
+  var fromSpan = document.getElementById('preview-modal-from');
+  if (fromSpan) fromSpan.innerHTML = from;
 
   document.getElementById('email-preview-modal').classList.remove('hidden');
 };
