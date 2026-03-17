@@ -38,20 +38,33 @@ async function supabaseRest(path, options = {}) {
 }
 
 // ── Helpers ────────────────────────────────────────────────────
+// Parse DB date string directly — no timezone conversion.
+// Supabase returns timestamps without 'Z', already in local time (IST).
+// Using new Date() on such strings causes cross-browser timezone shifts.
+function _parseDbDate(isoString) {
+  // '2026-03-17T11:32:06.595209' → [2026, 3, 17, 11, 32, 6]
+  var parts = isoString.replace('T', '-').replace(/\..*$/, '').split(/[-:]/);
+  // month is 0-indexed in Date constructor
+  return new Date(+parts[0], +parts[1] - 1, +parts[2], +parts[3] || 0, +parts[4] || 0, +parts[5] || 0);
+}
+
+var _months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
 function formatDate(isoString) {
   if (!isoString) return '—';
-  var d = new Date(isoString);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  var d = _parseDbDate(isoString);
+  return _months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
 }
 
 function formatDateTime(isoString) {
   if (!isoString) return '—';
-  var d = new Date(isoString);
-  return d.toLocaleString('en-IN', {
-    month: 'short', day: 'numeric', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-    timeZone: 'Asia/Kolkata'
-  });
+  var d = _parseDbDate(isoString);
+  var h = d.getHours();
+  var m = d.getMinutes();
+  var ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  var mm = m < 10 ? '0' + m : m;
+  return _months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear() + ', ' + h + ':' + mm + ' ' + ampm;
 }
 
 function truncate(str, len) {
