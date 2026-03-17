@@ -572,6 +572,10 @@
                             <div class="report-title-underline"></div>
                         </div>
                         <div style="display:flex;align-items:center;gap:12px;">
+                            <select id="history-campaign-filter" onchange="renderCampaignHistory()" style="padding: 6px 12px; border: 1px solid var(--charcoal-20); border-radius: var(--radius-sm); font-size: 0.8125rem;">
+                                <option value="">All Campaigns</option>
+                            </select>
+                            <input type="date" id="history-date-filter" onchange="renderCampaignHistory()" style="padding: 6px 12px; border: 1px solid var(--charcoal-20); border-radius: var(--radius-sm); font-size: 0.8125rem;" title="Filter by date">
                             <button id="history-refresh-btn" onclick="refreshCampaignHistory()" class="btn-open-detail" style="display:inline-flex;align-items:center;gap:6px;font-size:0.8125rem;font-weight:500;padding:8px 16px;border-radius:100px;">
                                 <i data-lucide="refresh-cw" width="14" height="14"></i> Refresh
                             </button>

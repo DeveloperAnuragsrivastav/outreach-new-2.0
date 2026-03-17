@@ -16,6 +16,7 @@ const SUPABASE_HEADERS = {
 // ── State ─────────────────────────────────────────────────────
 let currentDetailCampaign = null;
 let _historyLoaded = false;  // track if history has been loaded at least once
+let _allCampaignHistoryData = []; // store history data for filtering
 
 // ── Generic Supabase REST Helper ──────────────────────────────
 async function supabaseRest(path, options = {}) {
@@ -124,7 +125,9 @@ async function loadCampaignHistory(forceRefresh) {
   try {
     // Fetch campaign_name and created_at for the history list
     var data = await supabaseRest('campaignsdata?select=campaign_name,created_at&order=created_at.desc');
-    renderCampaignHistory(data || []);
+    _allCampaignHistoryData = data || [];
+    populateHistoryFilters(_allCampaignHistoryData);
+    renderCampaignHistory();
     _historyLoaded = true;
     setLiveIndicator(true);
     flashLiveIndicator();
@@ -147,7 +150,42 @@ window.refreshCampaignHistory = function () {
   loadCampaignHistory(true);
 };
 
-function renderCampaignHistory(rows) {
+function populateHistoryFilters(rows) {
+  var select = document.getElementById('history-campaign-filter');
+  if (!select) return;
+  var currentVal = select.value;
+  var uniqueNames = new Set();
+  rows.forEach(function(r) { if (r.campaign_name) uniqueNames.add(r.campaign_name); });
+  
+  var sortedNames = Array.from(uniqueNames).sort();
+  var html = '<option value="">All Campaigns</option>';
+  sortedNames.forEach(function(name) {
+    html += '<option value="' + escapeHtml(name) + '">' + escapeHtml(name) + '</option>';
+  });
+  select.innerHTML = html;
+  if (sortedNames.includes(currentVal)) select.value = currentVal;
+}
+
+window.renderCampaignHistory = function () {
+  var rows = _allCampaignHistoryData || [];
+  var campaignFilter = document.getElementById('history-campaign-filter')?.value;
+  var dateFilter = document.getElementById('history-date-filter')?.value; // YYYY-MM-DD
+  
+  if (campaignFilter) {
+    rows = rows.filter(function(r) { return r.campaign_name === campaignFilter; });
+  }
+  if (dateFilter) {
+    rows = rows.filter(function(r) {
+      if (!r.created_at) return false;
+      var d = _parseDbDate(r.created_at);
+      var month = '' + (d.getMonth() + 1);
+      var day = '' + d.getDate();
+      if (month.length < 2) month = '0' + month;
+      if (day.length < 2) day = '0' + day;
+      return (d.getFullYear() + '-' + month + '-' + day) === dateFilter;
+    });
+  }
+
   var tbody = document.getElementById('campaign-tbody');
   if (!tbody) return;
 
