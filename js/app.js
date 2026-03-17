@@ -134,6 +134,7 @@ function navigateTo(page) {
     if (page === 'dashboard') initDashboard();
     if (page === 'campaign-report') initReport();
     if (page === 'new-campaign') initSlider();
+    if (page === 'analytics') initAnalyticsPage();
     initScrollReveal();
     initIcons();
   }, 50);
@@ -575,58 +576,129 @@ function initIcons() {
   if (window.lucide) window.lucide.createIcons();
 }
 
-// ── Analytics (Webhook Fetch) ──────────────────────────────────
-async function fetchAnalytics() {
-  const btn = document.getElementById('fetch-analytics-btn');
-  const errorBox = document.getElementById('analytics-error');
-  const errorMsg = document.getElementById('analytics-error-message');
-  const loading = document.getElementById('analytics-loading');
-  const empty = document.getElementById('analytics-empty');
-  const results = document.getElementById('analytics-results');
+// ── Analytics (Campaign Selector + Webhook) ─────────────────────
+var _analyticsCampaignsLoaded = false;
+var ANALYTICS_WEBHOOK_URL = 'https://n8n.gignaati.com/webhook/campaign-analytics';
+
+// Called every time the user navigates to the Analytics page
+async function initAnalyticsPage() {
+  if (!_analyticsCampaignsLoaded) {
+    await loadAnalyticsCampaigns();
+  }
+}
+
+// Fetch distinct campaign names from Supabase and populate the dropdown
+async function loadAnalyticsCampaigns() {
+  var select = document.getElementById('analytics-campaign-select');
+  if (!select) return;
+
+  select.innerHTML = '<option value="">Loading campaigns...</option>';
+  select.disabled = true;
+
+  try {
+    var data = await supabaseRest('campaigns?select=campaign_name&order=launched_at.desc');
+
+    // Extract unique campaign names (Supabase may return duplicates)
+    var seen = {};
+    var uniqueNames = [];
+    if (Array.isArray(data)) {
+      data.forEach(function (row) {
+        var name = row.campaign_name;
+        if (name && !seen[name]) {
+          seen[name] = true;
+          uniqueNames.push(name);
+        }
+      });
+    }
+
+    // Populate dropdown
+    select.innerHTML = '';
+    if (uniqueNames.length === 0) {
+      select.innerHTML = '<option value="">No campaigns found</option>';
+      select.disabled = true;
+      return;
+    }
+
+    uniqueNames.forEach(function (name) {
+      var opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      select.appendChild(opt);
+    });
+
+    select.disabled = false;
+    _analyticsCampaignsLoaded = true;
+
+    // Auto-trigger: select the first campaign and fetch its analytics
+    select.selectedIndex = 0;
+    fetchAnalyticsForCampaign(uniqueNames[0]);
+
+  } catch (err) {
+    select.innerHTML = '<option value="">Failed to load campaigns</option>';
+    select.disabled = true;
+    console.error('[analytics] loadAnalyticsCampaigns error:', err);
+  }
+}
+
+// Called when the user changes the dropdown selection
+function onAnalyticsCampaignChange() {
+  var select = document.getElementById('analytics-campaign-select');
+  if (!select) return;
+  var campaignName = select.value;
+  if (campaignName) {
+    fetchAnalyticsForCampaign(campaignName);
+  }
+}
+
+// Send the selected campaign name to the webhook and display the response
+async function fetchAnalyticsForCampaign(campaignName) {
+  var errorBox = document.getElementById('analytics-error');
+  var errorMsg = document.getElementById('analytics-error-message');
+  var loading = document.getElementById('analytics-loading');
+  var loadingName = document.getElementById('analytics-loading-name');
+  var empty = document.getElementById('analytics-empty');
+  var results = document.getElementById('analytics-results');
+  var select = document.getElementById('analytics-campaign-select');
 
   // Reset UI
-  btn.disabled = true;
-  btn.textContent = 'Fetching...';
   errorBox.style.display = 'none';
   empty.style.display = 'none';
   results.style.display = 'none';
+  if (loadingName) loadingName.textContent = campaignName;
   loading.style.display = 'block';
+  if (select) select.disabled = true;
 
   try {
-    const response = await fetch('https://n8n.gignaati.com/webhook/sendgrid', {
-      method: 'GET',
-      headers: { 'Accept': 'application/json' }
+    var response = await fetch(ANALYTICS_WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ campaign_name: campaignName })
     });
 
     if (!response.ok) {
-      // Check if it's JSON error or text
-      let errMsg = `Server returned status ${response.status}`;
+      var errText = 'Server returned status ' + response.status;
       try {
-        const errorData = await response.json();
-        if (errorData.message) errMsg = errorData.message;
-      } catch (e) {
-        // not json
-      }
-      throw new Error(errMsg);
+        var errorData = await response.json();
+        if (errorData.message) errText = errorData.message;
+      } catch (e) { /* not json */ }
+      throw new Error(errText);
     }
 
-    const data = await response.json();
+    var data = await response.json();
 
-    // Aggregate global stats from array
-    let totalStats = {
-      delivered: 0,
-      opens: 0,
-      clicks: 0,
-      bounces: 0,
-      spam_reports: 0,
-      unsubscribes: 0,
-      blocks: 0
+    // Aggregate stats — handle single object, array of objects, or nested stats
+    var totalStats = {
+      delivered: 0, opens: 0, clicks: 0, bounces: 0,
+      spam_reports: 0, unsubscribes: 0, blocks: 0
     };
 
     if (Array.isArray(data)) {
-      data.forEach(day => {
-        if (day.stats && Array.isArray(day.stats)) {
-          day.stats.forEach(stat => {
+      data.forEach(function (item) {
+        if (item.stats && Array.isArray(item.stats)) {
+          item.stats.forEach(function (stat) {
             if (stat.metrics) {
               totalStats.delivered += stat.metrics.delivered || 0;
               totalStats.opens += stat.metrics.opens || 0;
@@ -637,10 +709,32 @@ async function fetchAnalytics() {
               totalStats.blocks += stat.metrics.blocks || 0;
             }
           });
+        } else if (item.metrics) {
+          totalStats.delivered += item.metrics.delivered || 0;
+          totalStats.opens += item.metrics.opens || 0;
+          totalStats.clicks += item.metrics.clicks || 0;
+          totalStats.bounces += item.metrics.bounces || 0;
+          totalStats.spam_reports += item.metrics.spam_reports || 0;
+          totalStats.unsubscribes += item.metrics.unsubscribes || 0;
+          totalStats.blocks += item.metrics.blocks || 0;
+        } else {
+          totalStats.delivered += item.delivered || 0;
+          totalStats.opens += item.opens || 0;
+          totalStats.clicks += item.clicks || 0;
+          totalStats.bounces += item.bounces || 0;
+          totalStats.spam_reports += item.spam_reports || 0;
+          totalStats.unsubscribes += item.unsubscribes || 0;
+          totalStats.blocks += item.blocks || 0;
         }
       });
-    } else {
-      throw new Error('Unexpected data format received.');
+    } else if (data && typeof data === 'object') {
+      totalStats.delivered = data.delivered || 0;
+      totalStats.opens = data.opens || 0;
+      totalStats.clicks = data.clicks || 0;
+      totalStats.bounces = data.bounces || 0;
+      totalStats.spam_reports = data.spam_reports || 0;
+      totalStats.unsubscribes = data.unsubscribes || 0;
+      totalStats.blocks = data.blocks || 0;
     }
 
     // Assign to UI
@@ -661,8 +755,7 @@ async function fetchAnalytics() {
     errorMsg.textContent = error.message;
     empty.style.display = 'block';
   } finally {
-    btn.disabled = false;
-    btn.textContent = 'Fetch Data';
+    if (select) select.disabled = false;
   }
 }
 

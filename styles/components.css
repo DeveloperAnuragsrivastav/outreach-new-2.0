@@ -999,3 +999,13 @@
     color: var(--slate-light);
     white-space: nowrap;
 }
+
+/* ── Analytics Campaign Selector ──────────────────────────────── */
+.analytics-campaign-selector {
+    display: flex;
+    align-items: center;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

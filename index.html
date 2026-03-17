@@ -671,10 +671,13 @@
                             <h1 class="report-title">Outreach Analytics</h1>
                             <div class="report-title-underline"></div>
                         </div>
-                        <button class="btn-primary" id="fetch-analytics-btn" onclick="fetchAnalytics()"
-                            style="padding: 10px 20px; font-weight: 600;">
-                            Fetch Data
-                        </button>
+                        <!-- Campaign selector dropdown -->
+                        <div class="analytics-campaign-selector">
+                            <label for="analytics-campaign-select" style="font-size: 0.8125rem; color: var(--slate); margin-right: 8px; white-space: nowrap;">Campaign:</label>
+                            <select id="analytics-campaign-select" onchange="onAnalyticsCampaignChange()" style="padding: 8px 14px; border: 1px solid var(--charcoal-20); border-radius: var(--radius-sm); font-size: 0.875rem; font-family: inherit; background: var(--white); color: var(--charcoal); min-width: 220px; cursor: pointer;">
+                                <option value="">Loading campaigns...</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -691,11 +694,12 @@
 
                     <div id="analytics-loading"
                         style="text-align: center; padding: 40px; color: var(--slate); display: none;">
-                        Fetching SendGrid stats...
+                        <div style="display: inline-block; width: 24px; height: 24px; border: 3px solid var(--charcoal-20); border-top-color: var(--charcoal); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+                        <p style="margin-top: 12px;">Fetching analytics for <strong id="analytics-loading-name"></strong>...</p>
                     </div>
 
                     <div id="analytics-empty" style="text-align: center; padding: 40px; color: var(--slate);">
-                        Click "Fetch Data" to pull the latest stats from SendGrid.
+                        Select a campaign above to view its analytics.
                     </div>
 
                     <div id="analytics-results" style="display: none;">
