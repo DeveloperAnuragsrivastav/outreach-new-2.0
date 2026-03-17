@@ -177,13 +177,14 @@ async function saveEditCampaign() {
     // If a new file was uploaded, trigger the webhook
     if (audienceSource === 'custom' && fileInput.files && fileInput.files.length > 0) {
       const file = fileInput.files[0];
-      const base64Data = await window.toBase64(file);
+      showToast('Parsing leads file...', 'info');
+      const rows = await window.parseLeadFile(file);
 
       const webhookPayload = {
         ...payload,
         lead_source: 'custom',
         lead_file_name: file.name,
-        lead_file_base64: base64Data
+        rows: rows
       };
 
       fetch('https://n8n.gignaati.com/webhook/Outreach_Campaign', {

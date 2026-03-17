@@ -345,9 +345,10 @@ async function openConfirmModal() {
     const file = fileInput.files[0];
     payload.lead_file_name = file.name;
     try {
-      payload.lead_file_base64 = await toBase64(file);
+      showToast('Parsing leads file...', 'info');
+      payload.rows = await parseLeadFile(file);
     } catch (err) {
-      showToast('Failed to read file.', 'error');
+      showToast('Failed to parse file: ' + err.message, 'error');
       return;
     }
   }
@@ -533,19 +534,49 @@ function toggleAudienceSource(context = 'new') {
   }
 }
 
-function toBase64(file) {
+function parseLeadFile(file) {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => {
-      // FileReader results in "data:MIME_TYPE;base64,...". We only need the base64 part often.
-      let encoded = reader.result.toString().replace(/^data:(.*,)?/, '');
-      if ((encoded.length % 4) > 0) {
-        encoded += '='.repeat(4 - (encoded.length % 4));
-      }
-      resolve(encoded);
-    };
-    reader.onerror = error => reject(error);
+    const ext = file.name.split('.').pop().toLowerCase();
+    
+    // Check if CSV/TSV
+    if (ext === 'csv' || ext === 'tsv') {
+      if (!window.Papa) return reject(new Error('PapaParse library not loaded'));
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          resolve(results.data);
+        },
+        error: function(err) {
+          reject(err);
+        }
+      });
+    } 
+    // Check if Excel
+    else if (ext === 'xlsx' || ext === 'xls') {
+      if (!window.XLSX) return reject(new Error('SheetJS library not loaded'));
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const json = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+          resolve(json);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      reader.onerror = function(err) {
+        reject(err);
+      };
+      reader.readAsArrayBuffer(file);
+    } 
+    // Unsupported
+    else {
+      reject(new Error('Unsupported file extension: ' + ext));
+    }
   });
 }
 
