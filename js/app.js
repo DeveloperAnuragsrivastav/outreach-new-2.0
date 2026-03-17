@@ -343,6 +343,7 @@ function moveSettingsIndicator(btn) {
 
 // ── Confirmation modal ─────────────────────────────────────────
 const WEBHOOK_URL = 'https://n8n.gignaati.com/webhook/Outreach_Campaign';
+const WEBHOOK_URL_CUSTOM = 'https://n8n.gignaati.com/webhook/Custom-Leads';
 
 async function openConfirmModal() {
   const name = document.getElementById('campaign-name').value.trim();
@@ -455,8 +456,11 @@ async function openConfirmModal() {
     path.style.animation = '';
   }
 
+  // Route to the correct webhook based on audience source
+  const webhookTarget = (audienceSource === 'custom') ? WEBHOOK_URL_CUSTOM : WEBHOOK_URL;
+
   // Fire webhook in background (Fire-and-forget style)
-  fetch(WEBHOOK_URL, {
+  fetch(webhookTarget, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
