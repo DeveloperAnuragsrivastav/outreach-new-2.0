@@ -47,9 +47,10 @@ function formatDate(isoString) {
 function formatDateTime(isoString) {
   if (!isoString) return '—';
   var d = new Date(isoString);
-  return d.toLocaleString('en-US', {
+  return d.toLocaleString('en-IN', {
     month: 'short', day: 'numeric', year: 'numeric',
-    hour: '2-digit', minute: '2-digit'
+    hour: '2-digit', minute: '2-digit',
+    timeZone: 'Asia/Kolkata'
   });
 }
 
