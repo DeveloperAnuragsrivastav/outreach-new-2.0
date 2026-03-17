@@ -246,7 +246,7 @@ async function openConfirmModal() {
   }
 
   // Get audience source
-  const audienceSource = document.querySelector('input[name="audience-source"]:checked')?.value || 'ai';
+  const audienceSource = document.querySelector('input[name="audience-source"]:checked')?.value || 'existing_lead';
   const leadListName = document.getElementById('new-lead-list-name')?.value.trim();
   const fileInput = document.getElementById('new-lead-file');
 
@@ -265,10 +265,10 @@ async function openConfirmModal() {
   const payload = {
     campaign_name: name,
     goal: document.getElementById('new-goal')?.value || document.getElementById('campaign-goal')?.value || '',
-    job_titles: audienceSource === 'ai' ? (document.getElementById('new-job-titles')?.value || document.getElementById('icp-title')?.value || '') : '',
-    industries: audienceSource === 'ai' ? (document.getElementById('new-industries')?.value || document.getElementById('icp-industry')?.value || '') : '',
-    company_size: audienceSource === 'ai' ? (document.getElementById('icp-size')?.value || '') : '',
-    geography: audienceSource === 'ai' ? (document.getElementById('icp-geo')?.value || '') : '',
+    job_titles: audienceSource === 'existing_lead' ? (document.getElementById('new-job-titles')?.value || document.getElementById('icp-title')?.value || '') : '',
+    industries: audienceSource === 'existing_lead' ? (document.getElementById('new-industries')?.value || document.getElementById('icp-industry')?.value || '') : '',
+    company_size: audienceSource === 'existing_lead' ? (document.getElementById('icp-size')?.value || '') : '',
+    geography: audienceSource === 'existing_lead' ? (document.getElementById('icp-geo')?.value || '') : '',
     sender_name: document.getElementById('sender-name')?.value || '',
     sender_role: document.getElementById('sender-role')?.value || '',
     sender_email: document.getElementById('sender-email')?.value || '',
@@ -463,7 +463,7 @@ function toggleAudienceSource(context = 'new') {
   const customSection = document.getElementById(`${context === 'new' ? 'custom' : 'edit-custom'}-leads-section`);
   const scrapSection = document.getElementById(`${context === 'new' ? 'scrap' : 'edit-scrap'}-leads-section`);
 
-  if (source === 'ai') {
+  if (source === 'existing_lead') {
     if (aiSection) aiSection.style.display = 'block';
     if (customSection) customSection.style.display = 'none';
     if (scrapSection) scrapSection.style.display = 'none';
