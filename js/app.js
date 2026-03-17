@@ -43,6 +43,54 @@ function finishWelcomeGate() {
   initScrollReveal();
 }
 
+async function submitSenderEmail() {
+  const input = document.getElementById('sender-verified-email');
+  const errorEl = document.getElementById('sender-email-error');
+  const email = input ? input.value.trim() : '';
+  const submitBtn = document.querySelector('#gate-step-2 .btn-gate-primary');
+
+  // Simple email validation
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (errorEl) { errorEl.textContent = 'Please enter a valid email address.'; errorEl.style.display = 'block'; }
+    if (input) input.style.borderColor = 'var(--danger)';
+    return;
+  }
+
+  if (errorEl) errorEl.style.display = 'none';
+  if (input) input.style.borderColor = '';
+
+  // Store globally for later use in webhook payload
+  window.verifiedSenderEmail = email;
+
+  // Show loading state
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Verifying...'; }
+
+  try {
+    const res = await fetch('https://n8n.gignaati.com/webhook/api-and-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sendgrid_api_key: sendgridApiKey, sender_email: email })
+    });
+
+    const data = await res.json();
+
+    if (res.status !== 200) {
+      // Show exact message from webhook, do NOT proceed
+      const msg = data && (data.message || data.error || JSON.stringify(data));
+      if (errorEl) { errorEl.textContent = msg || ''; errorEl.style.display = 'block'; }
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = 'Yes, it\'s verified — Continue <i data-lucide="arrow-right" width="18" height="18"></i>'; initIcons(); }
+      return;
+    }
+
+    // Only reaches here if 200 → proceed to campaign form
+    finishWelcomeGate();
+
+  } catch (err) {
+    if (errorEl) { errorEl.textContent = 'Network error. Please check your connection and try again.'; errorEl.style.display = 'block'; }
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = 'Yes, it\'s verified — Continue <i data-lucide="arrow-right" width="18" height="18"></i>'; initIcons(); }
+  }
+}
+
 // ── Wizard Step Reveal ─────────────────────────────────────────
 function revealNextStep(currentStep) {
   // Hide the Next button that was clicked

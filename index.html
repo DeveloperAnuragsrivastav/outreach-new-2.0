@@ -423,14 +423,20 @@
                                 <i data-lucide="mail-check" width="32" height="32"></i>
                             </div>
                             <h2>Almost there!</h2>
-                            <p>Have you verified your <strong>Sender Email</strong> (Single Sender Identity) inside your SendGrid dashboard?</p>
-                            
-                            <div class="gate-btns">
-                                <button class="btn-gate-secondary" onclick="window.open('https://app.sendgrid.com/settings/sender_auth', '_blank')">
-                                    No, verify now
+                            <p>Enter your verified <strong>Sender Email</strong> from SendGrid. This is the email your campaigns will be sent from.</p>
+
+                            <div class="gate-input-area" style="display: block; margin-top: 0; margin-bottom: 24px;">
+                                <label for="sender-verified-email">Verified Sender Email</label>
+                                <input type="email" id="sender-verified-email" placeholder="e.g. alex@yourcompany.com" />
+                                <div class="gate-error" id="sender-email-error">Please enter a valid email address.</div>
+                            </div>
+
+                            <div class="gate-btns" style="flex-direction: column; gap: 10px;">
+                                <button class="btn-gate-primary" onclick="submitSenderEmail()" style="width:100%; justify-content:center;">
+                                    Yes, it's verified — Continue <i data-lucide="arrow-right" width="18" height="18"></i>
                                 </button>
-                                <button class="btn-gate-primary" onclick="finishWelcomeGate()">
-                                    Yes, it's verified <i data-lucide="arrow-right" width="18" height="18"></i>
+                                <button class="btn-gate-secondary" style="width:100%;" onclick="window.open('https://app.sendgrid.com/settings/sender_auth', '_blank')">
+                                    Not verified yet — Go to SendGrid
                                 </button>
                             </div>
                         </div>
