@@ -518,21 +518,127 @@ function toggleAudienceSource(context = 'new') {
   const aiSection = document.getElementById(`${context === 'new' ? '' : 'edit-'}ai-audience-section`);
   const customSection = document.getElementById(`${context === 'new' ? 'custom' : 'edit-custom'}-leads-section`);
   const scrapSection = document.getElementById(`${context === 'new' ? 'scrap' : 'edit-scrap'}-leads-section`);
+  const nextBtn = document.getElementById('new-wizard-next-btn-2');
 
   if (source === 'existing_lead') {
     if (aiSection) aiSection.style.display = 'block';
     if (customSection) customSection.style.display = 'none';
     if (scrapSection) scrapSection.style.display = 'none';
+    if (context === 'new' && nextBtn) nextBtn.style.display = 'inline-flex';
   } else if (source === 'custom') {
     if (aiSection) aiSection.style.display = 'none';
     if (customSection) customSection.style.display = 'block';
     if (scrapSection) scrapSection.style.display = 'none';
+    
+    if (context === 'new' && nextBtn) {
+      const previewContainer = document.getElementById('new-lead-file-preview-container');
+      const hasValidFile = previewContainer && previewContainer.style.display === 'block';
+      nextBtn.style.display = hasValidFile ? 'inline-flex' : 'none';
+    }
   } else if (source === 'scrap') {
     if (aiSection) aiSection.style.display = 'none';
     if (customSection) customSection.style.display = 'none';
     if (scrapSection) scrapSection.style.display = 'block';
+    if (context === 'new' && nextBtn) nextBtn.style.display = 'none';
   }
 }
+
+window.downloadSampleCsv = function(e) {
+  e.preventDefault();
+  const headers = "Name,Email,Company,Title,LinkedIn URL,Website\n";
+  const row1 = "John Doe,john@acme.com,Acme Inc,VP of Sales,https://linkedin.com/in/johndoe,https://acme.com\n";
+  const row2 = "Jane Smith,jane@corp.com,Corp Ltd,Head of Marketing,https://linkedin.com/in/janesmith,https://corp.com\n";
+  const csvContent = headers + row1 + row2;
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'sample_leads.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+window.resetLeadFile = function(context) {
+  const fileInput = document.getElementById(`${context}-lead-file`);
+  const errorDiv = document.getElementById(`${context}-lead-file-error`);
+  const previewContainer = document.getElementById(`${context}-lead-file-preview-container`);
+  const thead = document.getElementById(`${context}-lead-file-thead`);
+  const tbody = document.getElementById(`${context}-lead-file-tbody`);
+  const nextBtn = document.getElementById('new-wizard-next-btn-2');
+  
+  if (fileInput) fileInput.value = '';
+  if (errorDiv) { errorDiv.style.display = 'none'; errorDiv.textContent = ''; }
+  if (previewContainer) previewContainer.style.display = 'none';
+  if (thead) thead.innerHTML = '';
+  if (tbody) tbody.innerHTML = '';
+  
+  if (context === 'new' && nextBtn) {
+    nextBtn.style.display = 'none';
+  }
+};
+
+window.handleLeadFileUpload = function(evt, context) {
+  const file = evt.target.files[0];
+  const errorDiv = document.getElementById(`${context}-lead-file-error`);
+  const previewContainer = document.getElementById(`${context}-lead-file-preview-container`);
+  const nextBtn = document.getElementById('new-wizard-next-btn-2');
+  
+  if (errorDiv) { errorDiv.style.display = 'none'; errorDiv.textContent = ''; }
+  if (previewContainer) previewContainer.style.display = 'none';
+  if (context === 'new' && nextBtn) nextBtn.style.display = 'none';
+  
+  if (!file) return;
+  
+  parseLeadFile(file).then(rows => {
+    if (!rows || rows.length === 0) {
+      throw new Error("File appears to be empty.");
+    }
+    const headers = Object.keys(rows[0]);
+    const emailCol = headers.find(h => {
+      const norm = (h || '').toLowerCase().trim();
+      return norm === 'email' || norm === 'email address';
+    });
+    
+    if (!emailCol) {
+      throw new Error("We couldn't find an Email column. Please check your file or download the sample.");
+    }
+    
+    const thead = document.getElementById(`${context}-lead-file-thead`);
+    const tbody = document.getElementById(`${context}-lead-file-tbody`);
+    
+    const esc = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    
+    if (thead && tbody) {
+      thead.innerHTML = `<tr>${headers.map(h => `<th style="padding: 8px;">${esc(h)}</th>`).join('')}</tr>`;
+      tbody.innerHTML = rows.slice(0, 3).map(row => 
+        `<tr style="border-bottom: 1px solid var(--charcoal-08);">
+          ${headers.map(h => `<td style="padding: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;" title="${esc(row[h])}">${esc(row[h])}</td>`).join('')}
+        </tr>`
+      ).join('');
+      
+      previewContainer.style.display = 'block';
+    }
+    
+    if (context === 'new' && nextBtn) nextBtn.style.display = 'inline-flex';
+    
+  }).catch(err => {
+    if (errorDiv) {
+      errorDiv.textContent = err.message;
+      errorDiv.style.display = 'block';
+    }
+    evt.target.value = '';
+  });
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    const newFileInput = document.getElementById('new-lead-file');
+    if (newFileInput) newFileInput.addEventListener('change', (e) => window.handleLeadFileUpload(e, 'new'));
+    
+    const editFileInput = document.getElementById('edit-lead-file');
+    if (editFileInput) editFileInput.addEventListener('change', (e) => window.handleLeadFileUpload(e, 'edit'));
+});
 
 function parseLeadFile(file) {
   return new Promise((resolve, reject) => {

@@ -449,11 +449,26 @@
                                     <input type="text" id="new-lead-list-name" placeholder="e.g. Q2_Enterprise_Leads" />
                                 </div>
                                 <div class="form-field">
-                                    <label for="new-lead-file">Upload Leads File <span
-                                            style="color:var(--danger)">*</span></label>
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
+                                        <label for="new-lead-file" style="margin-bottom: 0;">Upload Leads File <span style="color:var(--danger)">*</span></label>
+                                        <a href="#" onclick="downloadSampleCsv(event)" style="font-size: 0.8rem; color: var(--primary); text-decoration: underline;">Download sample CSV</a>
+                                    </div>
                                     <input type="file" id="new-lead-file" accept=".csv,.tsv,.xlsx,.xls"
                                         style="background: var(--white); padding: 12px; border: 1px solid var(--charcoal-20); border-radius: var(--radius-sm); width: 100%;" />
                                     <p style="font-size: 0.8rem; color: var(--slate); margin-top: 6px;">CSV or Excel (.csv, .xlsx, .xls, .tsv)<br/><span style="font-size: 0.75rem; opacity: 0.8;">Using Google Sheets? File → Download → CSV</span></p>
+                                    <div id="new-lead-file-error" style="display: none; color: var(--danger); font-size: 0.8rem; margin-top: 8px;"></div>
+                                </div>
+                                <div id="new-lead-file-preview-container" style="display: none; margin-top: 16px; background: var(--white); border: 1px solid var(--charcoal-20); border-radius: var(--radius-sm); overflow: hidden;">
+                                    <div style="background: var(--warm-stone); padding: 10px 16px; border-bottom: 1px solid var(--charcoal-20); display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="font-size: 0.85rem; font-weight: 600; color: var(--charcoal);">Data Preview (First 3 Rows)</span>
+                                        <a href="#" onclick="resetLeadFile('new')" style="font-size: 0.8rem; color: var(--primary); text-decoration: underline;">Looks wrong? Re-upload</a>
+                                    </div>
+                                    <div style="overflow-x: auto; padding: 16px;">
+                                        <table style="width: 100%; font-size: 0.8rem; text-align: left; border-collapse: collapse;">
+                                            <thead id="new-lead-file-thead" style="border-bottom: 1px solid var(--charcoal-20);"></thead>
+                                            <tbody id="new-lead-file-tbody"></tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
 
@@ -491,7 +506,7 @@
                                         rows="3" oninput="updatePreview()"></textarea>
                                 </div>
                             </div>
-                            <button type="button" class="wizard-next-btn" onclick="revealNextStep(2)">Next
+                            <button type="button" id="new-wizard-next-btn-2" class="wizard-next-btn" onclick="revealNextStep(2)">Next
                                 <span>→</span></button>
                         </div>
 
@@ -830,11 +845,26 @@
                             <input type="text" id="edit-lead-list-name" placeholder="e.g. Q2_Enterprise_Leads" />
                         </div>
                         <div class="form-field">
-                            <label for="edit-lead-file">Upload Leads File <span
-                                    style="color:var(--danger)">*</span></label>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
+                                <label for="edit-lead-file" style="margin-bottom: 0;">Upload Leads File <span style="color:var(--danger)">*</span></label>
+                                <a href="#" onclick="downloadSampleCsv(event)" style="font-size: 0.8rem; color: var(--primary); text-decoration: underline;">Download sample CSV</a>
+                            </div>
                             <input type="file" id="edit-lead-file" accept=".csv,.tsv,.xlsx,.xls"
                                 style="background: var(--white); padding: 12px; border: 1px solid var(--charcoal-20); border-radius: var(--radius-sm); width: 100%;" />
                             <p style="font-size: 0.8rem; color: var(--slate); margin-top: 6px;">CSV or Excel (.csv, .xlsx, .xls, .tsv)<br/><span style="font-size: 0.75rem; opacity: 0.8;">Using Google Sheets? File → Download → CSV</span></p>
+                            <div id="edit-lead-file-error" style="display: none; color: var(--danger); font-size: 0.8rem; margin-top: 8px;"></div>
+                        </div>
+                        <div id="edit-lead-file-preview-container" style="display: none; margin-top: 16px; background: var(--white); border: 1px solid var(--charcoal-20); border-radius: var(--radius-sm); overflow: hidden;">
+                            <div style="background: var(--warm-stone); padding: 10px 16px; border-bottom: 1px solid var(--charcoal-20); display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.85rem; font-weight: 600; color: var(--charcoal);">Data Preview (First 3 Rows)</span>
+                                <a href="#" onclick="resetLeadFile('edit')" style="font-size: 0.8rem; color: var(--primary); text-decoration: underline;">Looks wrong? Re-upload</a>
+                            </div>
+                            <div style="overflow-x: auto; padding: 16px;">
+                                <table style="width: 100%; font-size: 0.8rem; text-align: left; border-collapse: collapse;">
+                                    <thead id="edit-lead-file-thead" style="border-bottom: 1px solid var(--charcoal-20);"></thead>
+                                    <tbody id="edit-lead-file-tbody"></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
