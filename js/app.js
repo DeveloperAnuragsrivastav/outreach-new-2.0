@@ -545,9 +545,9 @@ function toggleAudienceSource(context = 'new') {
 
 window.downloadSampleCsv = function(e) {
   e.preventDefault();
-  const headers = "Name,Email,Company,Title,LinkedIn URL,Website\n";
-  const row1 = "John Doe,john@acme.com,Acme Inc,VP of Sales,https://linkedin.com/in/johndoe,https://acme.com\n";
-  const row2 = "Jane Smith,jane@corp.com,Corp Ltd,Head of Marketing,https://linkedin.com/in/janesmith,https://corp.com\n";
+  const headers = "companyname,name,title,company_name,email,seniority,departments,personal_linkedin_url\n";
+  const row1 = "Acme Inc,John Doe,VP of Sales,Acme Inc,john@acme.com,Director,Sales,https://linkedin.com/in/johndoe\n";
+  const row2 = "Corp Ltd,Jane Smith,Head of Marketing,Corp Ltd,jane@corp.com,Manager,Marketing,https://linkedin.com/in/janesmith\n";
   const csvContent = headers + row1 + row2;
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -590,6 +590,16 @@ window.handleLeadFileUpload = function(evt, context) {
   if (context === 'new' && nextBtn) nextBtn.style.display = 'none';
   
   if (!file) return;
+  
+  // Auto-fill Lead List Name field
+  const leadListNameInput = document.getElementById(`${context}-lead-list-name`);
+  if (leadListNameInput) {
+    let baseName = file.name;
+    const lastDotIndex = baseName.lastIndexOf('.');
+    if (lastDotIndex > 0) baseName = baseName.substring(0, lastDotIndex);
+    leadListNameInput.value = baseName;
+    leadListNameInput.dispatchEvent(new Event('input', { bubbles: true }));
+  }
   
   parseLeadFile(file).then(rows => {
     if (!rows || rows.length === 0) {
