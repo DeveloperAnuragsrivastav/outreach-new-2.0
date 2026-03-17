@@ -321,7 +321,8 @@ async function openConfirmModal() {
   // Collect all form data
   const payload = {
     campaign_name: name,
-    goal: document.getElementById('new-goal')?.value || document.getElementById('campaign-goal')?.value || '',
+    primary_goal: document.getElementById('campaign-goal')?.value || '',
+    goal: document.getElementById('new-goal')?.value || '',
     job_titles: audienceSource === 'existing_lead' ? (document.getElementById('new-job-titles')?.value || '') : '',
     industries: audienceSource === 'existing_lead' ? (document.getElementById('new-industries')?.value || '') : '',
     company_size: audienceSource === 'existing_lead' ? (document.getElementById('icp-size')?.value || '') : '',
