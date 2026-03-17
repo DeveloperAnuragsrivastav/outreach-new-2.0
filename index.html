@@ -380,13 +380,7 @@
                             </div>
                             <div class="form-field">
                                 <label for="campaign-goal">Primary Goal</label>
-                                <select id="campaign-goal" onchange="updatePreview()">
-                                    <option value="">Select a goal</option>
-                                    <option>Book discovery calls</option>
-                                    <option>Generate warm leads</option>
-                                    <option>Drive demo signups</option>
-                                    <option>Nurture existing contacts</option>
-                                </select>
+                                <input type="text" id="campaign-goal" placeholder="e.g. Book discovery calls" oninput="updatePreview()" />
                             </div>
                             <div class="form-field">
                                 <label for="new-goal">Goal</label>
@@ -793,13 +787,7 @@
                     </div>
                     <div class="form-field" style="margin-bottom: 14px;">
                         <label for="edit-campaign-goal">Goal</label>
-                        <select id="edit-campaign-goal">
-                            <option value="">Select a goal</option>
-                            <option>Book discovery calls</option>
-                            <option>Generate warm leads</option>
-                            <option>Drive demo signups</option>
-                            <option>Nurture existing contacts</option>
-                        </select>
+                        <input type="text" id="edit-campaign-goal" placeholder="e.g. Book discovery calls" />
                     </div>
 
                     <!-- Audience Source Toggle -->
