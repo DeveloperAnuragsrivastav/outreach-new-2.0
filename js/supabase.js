@@ -60,12 +60,7 @@ function formatDate(isoString) {
 function formatDateTime(isoString) {
   if (!isoString) return '—';
   var d = _parseDbDate(isoString);
-  var h = d.getHours();
-  var m = d.getMinutes();
-  var ampm = h >= 12 ? 'PM' : 'AM';
-  h = h % 12 || 12;
-  var mm = m < 10 ? '0' + m : m;
-  return _months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear() + ', ' + h + ':' + mm + ' ' + ampm;
+  return _months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
 }
 
 function truncate(str, len) {
