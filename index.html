@@ -531,6 +531,16 @@
                                 </div>
                             </div>
 
+                            <!-- Existing Lead Dropdown (shown only if leads found for sender email) -->
+                            <div id="existing-lead-dropdown-section" style="display:none; margin-bottom: 16px;">
+                                <div class="form-field">
+                                    <label for="existing-lead-select">Select Lead List <span style="color:var(--danger)">*</span></label>
+                                    <select id="existing-lead-select" onchange="updatePreview()">
+                                        <option value="">-- Select a lead list --</option>
+                                    </select>
+                                </div>
+                            </div>
+
                             <!-- Scrap Leads Section (Hidden by default) -->
                             <div id="scrap-leads-section"
                                 style="display: none; background: var(--warm-stone); padding: 20px; border-radius: var(--radius-md); border: 1px dashed var(--charcoal-20); margin-bottom: 24px; text-align: center;">
@@ -626,7 +636,7 @@
                             <div class="form-field">
                                 <label for="sender-email">Sending Email</label>
                                 <input type="email" id="sender-email" placeholder="alex@yourcompany.com"
-                                    oninput="updatePreview()" />
+                                    oninput="updatePreview()" onblur="checkLeadsOwner()" />
                             </div>
                             <div class="form-field">
                                 <label for="new-social-proof">Social Proof</label>
