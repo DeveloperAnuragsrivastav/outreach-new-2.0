@@ -341,7 +341,183 @@ function moveSettingsIndicator(btn) {
   indicator.style.width = btn.offsetWidth + 'px';
 }
 
-// ── Confirmation modal ─────────────────────────────────────────
+// ── Shared payload store for preview flow ──────────────────────
+let _previewPayload = null;
+
+// ── launchPreview — Step 1: send to preview webhook ────────────
+async function launchPreview() {
+  const name = document.getElementById('campaign-name').value.trim();
+  if (!name) {
+    showToast('Please enter a campaign name first.', 'info');
+    document.getElementById('campaign-name').focus();
+    return;
+  }
+
+  const audienceSource = document.querySelector('input[name="audience-source"]:checked')?.value || 'existing_lead';
+  const leadListName = document.getElementById('new-lead-list-name')?.value.trim();
+  const fileInput = document.getElementById('new-lead-file');
+
+  if (audienceSource === 'custom') {
+    if (!leadListName) { showToast('Please enter a Lead List Name.', 'error'); return; }
+    if (!fileInput.files || fileInput.files.length === 0) { showToast('Please upload a leads file.', 'error'); return; }
+  }
+
+  // Build payload (same as before)
+  const payload = {
+    campaign_name: name,
+    goal: document.getElementById('new-goal')?.value || '',
+    job_titles: audienceSource === 'existing_lead' ? (document.getElementById('new-job-titles')?.value || '') : '',
+    industries: audienceSource === 'existing_lead' ? (document.getElementById('new-industries')?.value || '') : '',
+    company_size: audienceSource === 'existing_lead' ? (document.getElementById('icp-size')?.value || '') : '',
+    geography: audienceSource === 'existing_lead' ? (document.getElementById('icp-geo')?.value || '') : '',
+    sender_name: document.getElementById('sender-name')?.value || '',
+    sender_role: document.getElementById('sender-role')?.value || '',
+    sender_email: document.getElementById('sender-email')?.value || '',
+    prospects: document.getElementById('campaign-scale')?.value || '250',
+    launched_at: new Date().toISOString(),
+    product_name: document.getElementById('new-product-name')?.value || '',
+    value_proposition: document.getElementById('new-value-proposition')?.value || '',
+    competitor_displacement: document.getElementById('new-competitor-displacement')?.value || '',
+    social_proof: document.getElementById('new-social-proof')?.value || '',
+    cta_link: document.getElementById('new-cta-link')?.value || '',
+    lead_source: audienceSource,
+    lead_list_name: audienceSource === 'custom' ? leadListName : '',
+    sendgrid_api_key: sendgridApiKey || ''
+  };
+
+  if (audienceSource === 'custom') {
+    const file = fileInput.files[0];
+    payload.lead_file_name = file.name;
+    try {
+      showToast('Parsing leads file...', 'info');
+      payload.rows = await parseLeadFile(file);
+    } catch (err) {
+      showToast('Failed to parse file: ' + err.message, 'error');
+      return;
+    }
+  }
+
+  _previewPayload = payload; // store for epLaunch
+
+  // Show loader
+  const loaderEl = document.getElementById('preview-loader');
+  const loaderMsg = document.getElementById('preview-loader-msg');
+  loaderEl.style.display = 'flex';
+
+  const cycleMessages = [
+    'Crafting your outreach strategy...',
+    'Scraping LinkedIn profile...',
+    'Analyzing lead behavior...',
+    'Writing personalized email...',
+    'Generating HTML template...',
+    'Almost there, hang tight...'
+  ];
+  let msgIdx = 0;
+  loaderMsg.textContent = cycleMessages[0];
+  const msgInterval = setInterval(() => {
+    msgIdx = (msgIdx + 1) % cycleMessages.length;
+    loaderMsg.textContent = cycleMessages[msgIdx];
+  }, 3000);
+
+  try {
+    const res = await fetch('https://n8n.gignaati.com/webhook/email-prview-exisiting-lead', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    clearInterval(msgInterval);
+    loaderEl.style.display = 'none';
+
+    // Render preview
+    document.getElementById('ep-from').textContent = data.from || '—';
+    document.getElementById('ep-to').textContent = data.to || '—';
+    document.getElementById('ep-subject').textContent = data.subject || '—';
+    document.getElementById('ep-body').srcdoc = data.body || '';
+    document.getElementById('ep-success').style.display = 'none';
+    document.getElementById('send-loader').style.display = 'none';
+    document.getElementById('ep-actions').style.display = 'flex';
+    document.getElementById('ep-launch-btn').disabled = false;
+
+    // Hide campaign form, show preview
+    document.getElementById('wizard-layout').style.display = 'none';
+    document.getElementById('new-campaign-header').style.display = 'none';
+    const previewSection = document.getElementById('email-preview-section');
+    previewSection.style.display = 'block';
+    previewSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (err) {
+    clearInterval(msgInterval);
+    loaderEl.style.display = 'none';
+    showToast('Preview failed: ' + err.message, 'error');
+  }
+}
+
+// ── epEdit — Go back to form without clearing it ───────────────
+function epEdit() {
+  document.getElementById('email-preview-section').style.display = 'none';
+  document.getElementById('new-campaign-header').style.display = '';
+  document.getElementById('wizard-layout').style.display = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── epLaunch — Final campaign submission ───────────────────────
+async function epLaunch() {
+  if (!_previewPayload) { showToast('No payload found. Please regenerate preview.', 'error'); return; }
+
+  const launchBtn = document.getElementById('ep-launch-btn');
+  const sendLoader = document.getElementById('send-loader');
+  const actionsDiv = document.getElementById('ep-actions');
+
+  launchBtn.disabled = true;
+  actionsDiv.style.display = 'none';
+  sendLoader.style.display = 'block';
+
+  const sendMessages = ['Sending your campaign...', 'Emails going out...', 'Campaign launched!'];
+  let sIdx = 0;
+  sendLoader.textContent = sendMessages[0];
+  const sendInterval = setInterval(() => {
+    sIdx = Math.min(sIdx + 1, sendMessages.length - 1);
+    sendLoader.textContent = sendMessages[sIdx];
+  }, 2500);
+
+  const webhookTarget = (_previewPayload.lead_source === 'custom') ? WEBHOOK_URL_CUSTOM : WEBHOOK_URL;
+
+  try {
+    await fetch(webhookTarget, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(_previewPayload)
+    });
+  } catch (err) {
+    console.warn('Campaign webhook error:', err);
+  }
+
+  clearInterval(sendInterval);
+  sendLoader.style.display = 'none';
+  document.getElementById('ep-success').style.display = 'block';
+
+  // Reset form after a moment
+  setTimeout(() => {
+    document.getElementById('email-preview-section').style.display = 'none';
+    document.getElementById('new-campaign-header').style.display = '';
+    document.getElementById('wizard-layout').style.display = '';
+    _previewPayload = null;
+    // Reset wizard to step 1
+    document.querySelectorAll('[data-wizard-step]').forEach((el, i) => {
+      if (i === 0) el.classList.add('step-visible');
+      else el.classList.remove('step-visible');
+    });
+    document.querySelectorAll('input:not([type=radio]):not([type=checkbox]), textarea, select').forEach(el => {
+      if (el.closest('#page-new-campaign')) el.value = '';
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    showToast('Campaign launched successfully!', 'success');
+  }, 3000);
+}
+
+// ── Confirmation modal (kept for internal reference) ───────────
 const WEBHOOK_URL = 'https://n8n.gignaati.com/webhook/Outreach_Campaign';
 const WEBHOOK_URL_CUSTOM = 'https://n8n.gignaati.com/webhook/Custom-Leads';
 
