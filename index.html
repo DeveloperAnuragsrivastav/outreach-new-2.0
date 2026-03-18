@@ -508,6 +508,39 @@
                             <div class="section-divider"><span class="section-divider-label">Your Target Audience</span>
                             </div>
 
+                            <!-- Audience Source Toggle -->
+                            <div class="form-field" style="margin-bottom: 24px;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600;">Audience
+                                    Source</label>
+                                <div style="display: flex; gap: 16px; align-items: center;">
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="radio" name="audience-source" value="existing_lead" checked disabled
+                                            onchange="toggleAudienceSource('new')" style="width: auto; cursor: not-allowed; opacity: 0.45;" id="existing-lead-radio" />
+                                        <span style="opacity: 0.45; cursor: not-allowed;" id="existing-lead-label">Use Existing Lead</span>
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="radio" name="audience-source" value="custom"
+                                            onchange="toggleAudienceSource('new')" style="width: auto;" />
+                                        <span>Click if you have your own leads</span>
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="radio" name="audience-source" value="scrap"
+                                            onchange="toggleAudienceSource('new')" style="width: auto;" />
+                                        <span>Scrap Realtime Leads</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Existing Lead Dropdown (shown only if leads found for sender email) -->
+                            <div id="existing-lead-dropdown-section" style="display:none; margin-bottom: 16px;">
+                                <div class="form-field">
+                                    <label for="existing-lead-select">Select Lead List <span style="color:var(--danger)">*</span></label>
+                                    <select id="existing-lead-select" onchange="updatePreview()">
+                                        <option value="">-- Select a lead list --</option>
+                                    </select>
+                                </div>
+                            </div>
+
                             <!-- Scrap Leads Section (Hidden by default) -->
                             <div id="scrap-leads-section"
                                 style="display: none; background: var(--warm-stone); padding: 20px; border-radius: var(--radius-md); border: 1px dashed var(--charcoal-20); margin-bottom: 24px; text-align: center;">
@@ -604,38 +637,6 @@
                                 <label for="sender-email">Sending Email</label>
                                 <input type="email" id="sender-email" placeholder="alex@yourcompany.com"
                                     oninput="updatePreview()" onblur="checkLeadsOwner()" />
-                            </div>
-
-                            <!-- Audience Source Toggle (shown after email is entered) -->
-                            <div class="form-field" style="margin-bottom: 24px;">
-                                <label style="display: block; margin-bottom: 8px; font-weight: 600;">Audience Source</label>
-                                <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
-                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                        <input type="radio" name="audience-source" value="existing_lead" checked disabled
-                                            onchange="toggleAudienceSource('new')" style="width: auto; cursor: not-allowed; opacity: 0.45;" id="existing-lead-radio" />
-                                        <span style="opacity: 0.45; cursor: not-allowed;" id="existing-lead-label">Use Existing Lead</span>
-                                    </label>
-                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                        <input type="radio" name="audience-source" value="custom"
-                                            onchange="toggleAudienceSource('new')" style="width: auto;" />
-                                        <span>Click if you have your own leads</span>
-                                    </label>
-                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                        <input type="radio" name="audience-source" value="scrap"
-                                            onchange="toggleAudienceSource('new')" style="width: auto;" />
-                                        <span>Scrap Realtime Leads</span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <!-- Existing Lead Dropdown (shown only if leads found for sender email) -->
-                            <div id="existing-lead-dropdown-section" style="display:none; margin-bottom: 16px;">
-                                <div class="form-field">
-                                    <label for="existing-lead-select">Select Lead List <span style="color:var(--danger)">*</span></label>
-                                    <select id="existing-lead-select" onchange="updatePreview()">
-                                        <option value="">-- Select a lead list --</option>
-                                    </select>
-                                </div>
                             </div>
                             <div class="form-field">
                                 <label for="new-social-proof">Social Proof</label>
