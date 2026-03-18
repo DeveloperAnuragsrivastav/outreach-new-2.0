@@ -39,6 +39,31 @@ function finishWelcomeGate() {
   document.getElementById('welcome-gate').style.display = 'none';
   document.getElementById('new-campaign-header').style.display = '';
   document.getElementById('wizard-layout').style.display = '';
+  
+  // Auto-fill and lock Sender Name
+  const senderNameInput = document.getElementById('sender-name');
+  if (senderNameInput && window.verifiedSenderName) {
+    senderNameInput.value = window.verifiedSenderName;
+    senderNameInput.readOnly = true;
+    senderNameInput.style.backgroundColor = '#f1f5f9';
+    senderNameInput.style.color = '#64748b';
+    senderNameInput.style.cursor = 'not-allowed';
+    senderNameInput.style.boxShadow = 'none';
+    senderNameInput.style.borderColor = '#e2e8f0';
+  }
+
+  // Auto-fill and lock Sender Email
+  const senderEmailInput = document.getElementById('sender-email');
+  if (senderEmailInput && window.verifiedSenderEmail) {
+    senderEmailInput.value = window.verifiedSenderEmail;
+    senderEmailInput.readOnly = true;
+    senderEmailInput.style.backgroundColor = '#f1f5f9';
+    senderEmailInput.style.color = '#64748b';
+    senderEmailInput.style.cursor = 'not-allowed';
+    senderEmailInput.style.boxShadow = 'none';
+    senderEmailInput.style.borderColor = '#e2e8f0';
+  }
+  
   initIcons();
   initScrollReveal();
 }
@@ -59,8 +84,13 @@ async function submitSenderEmail() {
   if (errorEl) errorEl.style.display = 'none';
   if (input) input.style.borderColor = '';
 
+  // Extract nicely formatted name from email (e.g. john.doe@ -> John Doe)
+  const namePart = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ');
+  const senderName = namePart.replace(/\b\w/g, c => c.toUpperCase()).trim();
+
   // Store globally for later use in webhook payload
   window.verifiedSenderEmail = email;
+  window.verifiedSenderName = senderName;
 
   // Show loading state
   if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Verifying...'; }
@@ -69,7 +99,11 @@ async function submitSenderEmail() {
     const res = await fetch('https://n8n.gignaati.com/webhook/api-and-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sendgrid_api_key: sendgridApiKey, sender_email: email })
+      body: JSON.stringify({ 
+        sendgrid_api_key: sendgridApiKey, 
+        sender_email: email,
+        sender_name: window.verifiedSenderName
+      })
     });
 
     const data = await res.json();
@@ -705,7 +739,7 @@ function autofillCampaignForm() {
   };
   Object.entries(fields).forEach(([id, val]) => {
     const el = document.getElementById(id);
-    if (!el) return;
+    if (!el || el.readOnly) return;
     el.value = val;
     // trigger native input/change events so any listeners fire
     el.dispatchEvent(new Event('input', { bubbles: true }));
@@ -775,9 +809,9 @@ function toggleAudienceSource(context = 'new') {
 
 window.downloadSampleCsv = function(e) {
   e.preventDefault();
-  const headers = "companyname,name,title,company_name,email,seniority,departments,personal_linkedin_url\n";
-  const row1 = "Acme Inc,John Doe,VP of Sales,Acme Inc,john@acme.com,Director,Sales,https://linkedin.com/in/johndoe\n";
-  const row2 = "Corp Ltd,Jane Smith,Head of Marketing,Corp Ltd,jane@corp.com,Manager,Marketing,https://linkedin.com/in/janesmith\n";
+  const headers = "Company Name,Name,Title,Email,Seniority,Departments,Personal LinkedIn URL\n";
+  const row1 = "Acme Inc,John Doe,VP of Sales,john@acme.com,Director,Sales,https://linkedin.com/in/johndoe\n";
+  const row2 = "Corp Ltd,Jane Smith,Head of Marketing,jane@corp.com,Manager,Marketing,https://linkedin.com/in/janesmith\n";
   const csvContent = headers + row1 + row2;
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -801,8 +835,8 @@ window.resetLeadFile = function(context) {
   if (fileInput) fileInput.value = '';
   if (errorDiv) { errorDiv.style.display = 'none'; errorDiv.textContent = ''; }
   if (previewContainer) previewContainer.style.display = 'none';
-  if (thead) thead.innerHTML = '';
-  if (tbody) tbody.innerHTML = '';
+  if (thead) { thead.innerHTML = ''; }
+  if (tbody) { tbody.innerHTML = ''; }
   
   if (context === 'new' && nextBtn) {
     nextBtn.style.display = 'none';
@@ -816,7 +850,7 @@ window.handleLeadFileUpload = function(evt, context) {
   const nextBtn = document.getElementById('new-wizard-next-btn-2');
   
   if (errorDiv) { errorDiv.style.display = 'none'; errorDiv.textContent = ''; }
-  if (previewContainer) previewContainer.style.display = 'none';
+  if (previewContainer) { previewContainer.style.display = 'none'; }
   if (context === 'new' && nextBtn) nextBtn.style.display = 'none';
   
   if (!file) return;
@@ -844,6 +878,15 @@ window.handleLeadFileUpload = function(evt, context) {
     if (!emailCol) {
       throw new Error("We couldn't find an Email column. Please check your file or download the sample.");
     }
+
+    // Validate columns match sample CSV headers
+    const expectedCols = ['company name','name','title','email','seniority','departments','personal linkedin url'];
+    const uploadedCols = headers.map(h => (h || '').toLowerCase().trim());
+    const missingCols = expectedCols.filter(c => !uploadedCols.includes(c));
+
+    if (missingCols.length > 0) {
+      throw new Error("Please match the format of the sample data. Missing: " + missingCols.join(', '));
+    }
     
     const thead = document.getElementById(`${context}-lead-file-thead`);
     const tbody = document.getElementById(`${context}-lead-file-tbody`);
@@ -864,11 +907,20 @@ window.handleLeadFileUpload = function(evt, context) {
     if (context === 'new' && nextBtn) nextBtn.style.display = 'inline-flex';
     
   }).catch(err => {
+    if (typeof showToast === 'function') {
+      showToast(err.message, 'error');
+    }
     if (errorDiv) {
       errorDiv.textContent = err.message;
       errorDiv.style.display = 'block';
+      setTimeout(() => {
+        if (errorDiv.textContent === err.message) {
+          errorDiv.style.display = 'none';
+        }
+      }, 4000);
     }
     evt.target.value = '';
+    if (previewContainer) previewContainer.style.display = 'none';
   });
 };
 
