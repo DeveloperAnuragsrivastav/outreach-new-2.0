@@ -127,9 +127,38 @@ async function submitSenderEmail() {
 
 // ── Wizard Step Reveal ─────────────────────────────────────────
 function revealNextStep(currentStep) {
-  // Hide the Next button that was clicked
   const currentEl = document.querySelector('[data-wizard-step="' + currentStep + '"]');
   if (currentEl) {
+    let hasError = false;
+    const inputs = currentEl.querySelectorAll('input:not([type="radio"]):not([type="checkbox"]):not([type="file"]), textarea, select');
+    const source = document.querySelector('input[name="audience-source"]:checked')?.value || 'existing_lead';
+    
+    inputs.forEach(el => {
+      // Check if visible and not readonly/disabled
+      if (el.offsetParent !== null && !el.readOnly && !el.disabled) {
+        // Exempt "Any size" explicitly since it's a valid empty value for the select
+        if (el.id === 'icp-size' && el.value === '') return;
+        
+        if (!el.value.trim()) {
+           el.style.borderColor = '#EF4444'; // Red border
+           hasError = true;
+           // Remove red border when user starts typing/selecting
+           el.addEventListener('input', function() { this.style.borderColor = ''; }, { once: true });
+           if (el.tagName === 'SELECT') {
+             el.addEventListener('change', function() { this.style.borderColor = ''; }, { once: true });
+           }
+        }
+      }
+    });
+
+    if (hasError) {
+      if (typeof showToast === 'function') {
+        showToast('Please fill out all highlighted fields', 'error');
+      }
+      return; // Stop form from advancing
+    }
+
+    // Hide the Next button that was clicked
     const btn = currentEl.querySelector('.wizard-next-btn');
     if (btn) btn.style.display = 'none';
   }
