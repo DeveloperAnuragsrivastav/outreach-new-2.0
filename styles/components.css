@@ -335,9 +335,9 @@
 }
 
 .sidebar-nav-item.active {
-    background: #F4F4F5;
-    color: #09090B;
-    font-weight: 500;
+    background: var(--primary-light);
+    color: var(--primary);
+    font-weight: 600;
 }
 
 .nav-icon {
@@ -367,7 +367,7 @@
     top: 8px;
     bottom: 8px;
     width: 0;
-    background: var(--charcoal);
+    background: var(--primary);
     border-radius: 0 2px 2px 0;
     transition: width 250ms ease;
 }
@@ -504,9 +504,9 @@
     position: absolute;
     top: 4px;
     right: 4px;
-    width: 12px;
-    height: 12px;
-    background: #DC2626;
+    width: 14px;
+    height: 14px;
+    background: var(--primary);
     color: var(--white);
     border-radius: 50%;
     font-size: 8px;
@@ -553,10 +553,9 @@
 .toast {
     background: #FFFFFF;
     border-radius: var(--radius-md);
-    padding: 12px 14px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border: 1px solid #E4E4E7;
-    border-left: 3px solid #18181B;
+    padding: 14px 16px;
+    box-shadow: var(--shadow-lg);
+    border-left: 3px solid var(--primary);
     display: flex;
     align-items: flex-start;
     gap: 10px;
