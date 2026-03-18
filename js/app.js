@@ -835,7 +835,7 @@ function initIcons() {
 // ── Analytics (Campaign Selector + Webhook) ─────────────────────
 var _analyticsCampaignsLoaded = false;
 var _analyticsCampaignMap = {};  // { campaign_name: created_at }
-var ANALYTICS_WEBHOOK_URL = 'https://n8n.gignaati.com/webhook/caimpaign';
+var ANALYTICS_WEBHOOK_URL = 'https://n8n.gignaati.com/webhook/Analytics';
 
 // Called every time the user navigates to the Analytics page
 async function initAnalyticsPage() {
