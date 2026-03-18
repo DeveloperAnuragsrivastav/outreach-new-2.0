@@ -120,7 +120,10 @@ async function submitSenderEmail() {
     finishWelcomeGate();
 
   } catch (err) {
-    if (errorEl) { errorEl.textContent = 'Network error. Please check your connection and try again.'; errorEl.style.display = 'block'; }
+    if (typeof showFallbackError === 'function') {
+      showFallbackError('Connection Error', 'We couldn\'t verify your Sender Email right now. Please check your connection and try again.');
+    }
+    if (errorEl) { errorEl.style.display = 'none'; }
     if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = 'Yes, it\'s verified — Continue <i data-lucide="arrow-right" width="18" height="18"></i>'; initIcons(); }
   }
 }
@@ -513,7 +516,11 @@ async function launchPreview() {
   } catch (err) {
     clearInterval(msgInterval);
     loaderEl.style.display = 'none';
-    showToast('Preview failed: ' + err.message, 'error');
+    if (typeof showFallbackError === 'function') {
+      showFallbackError('Preview Failed', 'We couldn\'t generate the email preview. Please check your connection or try again.');
+    } else {
+      showToast('Preview failed: ' + err.message, 'error');
+    }
   }
 }
 
@@ -548,13 +555,22 @@ async function epLaunch() {
   const webhookTarget = (_previewPayload.lead_source === 'custom') ? WEBHOOK_URL_CUSTOM : WEBHOOK_URL;
 
   try {
-    await fetch(webhookTarget, {
+    const res = await fetch(webhookTarget, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(_previewPayload)
     });
+    if (!res.ok) throw new Error('API returned ' + res.status);
   } catch (err) {
     console.warn('Campaign webhook error:', err);
+    clearInterval(sendInterval);
+    sendLoader.style.display = 'none';
+    if (typeof showFallbackError === 'function') {
+       showFallbackError('Launch Failed', 'We hit a snag while launching your campaign. Please try again or contact support.');
+    }
+    launchBtn.disabled = false;
+    actionsDiv.style.display = 'flex';
+    return;
   }
 
   clearInterval(sendInterval);
@@ -704,7 +720,10 @@ async function openConfirmModal() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   })
-    .then(response => response.json().catch(() => ({})))
+    .then(response => {
+      if (!response.ok) throw new Error('API returned status ' + response.status);
+      return response.json().catch(() => ({}));
+    })
     .then(data => {
       // If explicit error from n8n 
       if (data && data.success === false) {
@@ -732,7 +751,13 @@ async function openConfirmModal() {
     })
     .catch(err => {
       console.warn('Webhook delivery failed:', err);
-      // Don't remove row on network error to avoid jarring UI, let poll correct it
+      const confirmModal = document.getElementById('confirm-modal');
+      if (confirmModal) confirmModal.classList.add('hidden');
+      if (typeof showFallbackError === 'function') {
+         showFallbackError('Launch Failed', 'We couldn\'t connect to our servers to launch your campaign. Please try again or contact support.');
+      }
+      const row = document.getElementById(tempId);
+      if (row) row.remove();
     });
 }
 function closeConfirmModal() {
@@ -1086,9 +1111,34 @@ function initReport() {
 
 // ── Lucide icons init ──────────────────────────────────────────
 function initIcons() {
-  if (window.lucide) window.lucide.createIcons();
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
 }
 
+window.showFallbackError = function(title = 'Something went wrong', message = 'We\'re having trouble connecting to our servers. Please check your connection or try again.') {
+  const modal = document.getElementById('global-error-modal');
+  const titleEl = document.getElementById('global-error-title');
+  const bodyEl = document.getElementById('global-error-body');
+  
+  if (titleEl) titleEl.textContent = title;
+  if (bodyEl) bodyEl.textContent = message;
+  
+  if (modal) {
+    modal.classList.remove('hidden');
+    initIcons();
+  } else {
+    showToast(message, 'error');
+  }
+};
+
+window.closeGlobalErrorModal = function(e) {
+  if (e && e.target.id !== 'global-error-modal' && !e.target.closest('.btn-primary')) {
+      return; 
+  }
+  const modal = document.getElementById('global-error-modal');
+  if (modal) modal.classList.add('hidden');
+};
 // ── Analytics (Campaign Selector + Webhook) ─────────────────────
 var _analyticsCampaignsLoaded = false;
 var _analyticsCampaignMap = {};  // { campaign_name: created_at }
@@ -1153,6 +1203,9 @@ async function loadAnalyticsCampaigns() {
     select.innerHTML = '<option value="">Failed to load campaigns</option>';
     select.disabled = true;
     console.error('[analytics] loadAnalyticsCampaigns error:', err);
+    if (typeof showFallbackError === 'function') {
+      showFallbackError('System Warning', 'We had trouble loading your campaign history. Please refresh the page or try again in a few minutes.');
+    }
   }
 }
 
@@ -1267,6 +1320,9 @@ async function fetchAnalyticsForCampaign(campaignName) {
 
   } catch (error) {
     loading.style.display = 'none';
+    if (typeof showFallbackError === 'function') {
+      showFallbackError('Analytics Error', 'We had trouble loading your analytics. ' + error.message);
+    }
     errorBox.style.display = 'flex';
     errorMsg.textContent = error.message;
     empty.style.display = 'block';

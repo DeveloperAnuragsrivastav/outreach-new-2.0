@@ -1155,8 +1155,24 @@
                             style="font-family: var(--font-sans); font-size: 0.9375rem; color: var(--charcoal); line-height: 1.6; white-space: pre-wrap;">
                         </div>
                     </div>
+                    </div>
                 </div>
             </div>
+
+            <!-- GLOBAL ERROR MODAL -->
+            <div id="global-error-modal" class="modal-backdrop hidden" style="z-index: 9999; align-items: center; justify-content: center;" onclick="closeGlobalErrorModal(event)">
+                <div class="modal-box" id="error-modal-box" style="text-align: center; max-width: 400px; padding: 32px 24px;">
+                    <div style="width: 48px; height: 48px; background: rgba(239, 68, 68, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; color: var(--danger);">
+                        <i data-lucide="alert-circle" width="24" height="24"></i>
+                    </div>
+                    <h2 class="modal-title" id="global-error-title" style="margin-bottom: 8px;">Something went wrong</h2>
+                    <p class="modal-body" id="global-error-body" style="margin-bottom: 24px;">We're having trouble connecting to our servers. Please check your connection or try again in a few minutes.</p>
+                    <div class="modal-actions" style="margin-top: 0;">
+                        <button class="btn-primary" style="width: 100%; justify-content: center;" onclick="closeGlobalErrorModal()">Understood</button>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
