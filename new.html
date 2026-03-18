@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CampaignBuddy — UI Redesign Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --primary: #2563eb; --primary-hover: #1d4ed8; --primary-light: #eff6ff; --primary-mid: #bfdbfe;
+  --charcoal: #0f172a; --charcoal-80: rgba(15,23,42,.80); --charcoal-20: rgba(15,23,42,.20); --charcoal-08: rgba(15,23,42,.08);
+  --slate: #64748b; --slate-light: #94a3b8; --slate-lighter: #cbd5e1;
+  --white: #ffffff; --bg-main: #f8fafc; --warm-stone: #f1f5f9; --surface-2: #e2e8f0;
+  --success: #10b981; --success-light: #d1fae5; --warning: #f59e0b; --warning-light: #fef3c7;
+  --danger: #ef4444; --danger-light: #fee2e2;
+  --font-sans: 'Inter', -apple-system, sans-serif;
+  --radius-xs: 4px; --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 24px; --radius-full: 9999px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,.08), 0 2px 4px -1px rgba(0,0,0,.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,.08), 0 4px 6px -2px rgba(0,0,0,.04);
+  --shadow-xl: 0 20px 25px -5px rgba(0,0,0,.08), 0 10px 10px -5px rgba(0,0,0,.03);
+  --transition-fast: 0.15s cubic-bezier(.4,0,.2,1);
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--font-sans); background: var(--bg-main); color: var(--charcoal); line-height: 1.6; margin: 0; -webkit-font-smoothing: antialiased; }
+a { text-decoration: none; color: inherit; }
+
+/* ── Preview Layout ── */
+.preview-wrapper { display: flex; height: 100vh; overflow: hidden; }
+
+/* ── Sidebar ── */
+.sidebar { width: 240px; min-width: 240px; height: 100vh; background: var(--white); border-right: 1px solid var(--charcoal-08); display: flex; flex-direction: column; box-shadow: var(--shadow-sm); }
+.sidebar-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 16px 16px; border-bottom: 1px solid var(--charcoal-08); min-height: 64px; }
+.sidebar-logo { display: flex; align-items: center; gap: 10px; }
+.logo-icon-dark { width: 32px; height: 32px; background: linear-gradient(135deg, var(--primary) 0%, #1e40af 100%); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(37,99,235,.35); }
+.logo-icon-dark svg { display: block; }
+.sidebar-logo-text { font-size: 1rem; font-weight: 700; color: var(--charcoal); letter-spacing: -.02em; }
+.collapse-btn { background: transparent; border: none; padding: 6px; border-radius: var(--radius-xs); color: var(--slate); cursor: pointer; display: flex; align-items: center; transition: background var(--transition-fast); }
+.collapse-btn:hover { background: var(--warm-stone); }
+.sidebar-nav { flex: 1; padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-sm); color: var(--slate); font-size: .875rem; font-weight: 500; transition: all var(--transition-fast); position: relative; cursor: pointer; }
+.nav-item:hover { background: var(--warm-stone); color: var(--primary); }
+.nav-item.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+.nav-item .active-bar { position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 3px; height: 60%; background: var(--primary); border-radius: 0 2px 2px 0; opacity: 0; }
+.nav-item.active .active-bar { opacity: 1; }
+.nav-icon { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.sidebar-footer { padding: 12px 8px 16px; border-top: 1px solid var(--charcoal-08); }
+.user-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; }
+.user-email { font-size: .8rem; color: var(--slate); }
+.logout-btn { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-sm); background: transparent; border: none; color: var(--slate); font-size: .875rem; font-weight: 500; width: 100%; cursor: pointer; transition: all var(--transition-fast); }
+.logout-btn:hover { background: var(--danger-light); color: var(--danger); }
+
+/* ── Main ── */
+.main { flex: 1; overflow-y: auto; background: var(--bg-main); }
+
+/* ── Parallax Header ── */
+.parallax-header { position: relative; height: 200px; overflow: hidden; }
+.parallax-bg { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.parallax-overlay { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(15,23,42,.78) 0%, rgba(37,99,235,.55) 100%); }
+.parallax-content { position: relative; z-index: 2; padding: 48px 40px 32px; }
+.parallax-title { font-size: 2rem; font-weight: 800; color: white; margin: 0 0 6px; letter-spacing: -.03em; }
+.parallax-subtitle { color: rgba(255,255,255,.8); font-size: .95rem; margin: 0; }
+.autofill-btn { position: absolute; bottom: 20px; right: 24px; z-index: 3; display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: rgba(255,255,255,.15); backdrop-filter: blur(8px); color: white; border: 1px solid rgba(255,255,255,.25); border-radius: var(--radius-full); font-size: .8125rem; font-weight: 500; cursor: pointer; transition: all var(--transition-fast); font-family: var(--font-sans); }
+.autofill-btn:hover { background: rgba(255,255,255,.28); }
+
+/* ── Wizard Layout ── */
+.wizard-layout { display: grid; grid-template-columns: 1fr 360px; min-height: calc(100vh - 200px); }
+.wizard-form { padding: 32px 40px; border-right: 1px solid var(--charcoal-08); }
+.wizard-preview { background: var(--white); padding: 32px 28px; }
+
+/* ── Section Divider ── */
+.section-divider { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+.section-divider::before, .section-divider::after { content: ''; flex: 1; height: 1px; background: var(--charcoal-08); }
+.section-label { font-size: .75rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: .08em; padding: 4px 12px; background: var(--primary-light); border-radius: var(--radius-full); white-space: nowrap; }
+
+/* ── Form Fields ── */
+.form-field { margin-bottom: 18px; }
+.form-field label { display: block; font-size: .8125rem; font-weight: 500; color: var(--slate); margin-bottom: 6px; }
+.form-field input, .form-field select, .form-field textarea {
+  width: 100%; padding: 10px 14px; border: 1px solid var(--slate-lighter); border-radius: var(--radius-sm);
+  font-family: var(--font-sans); font-size: .9375rem; color: var(--charcoal); background: var(--white);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast); box-sizing: border-box;
+}
+.form-field input:focus, .form-field select:focus, .form-field textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+.form-field input::placeholder { color: var(--slate-light); }
+.form-field select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* ── Buttons ── */
+.btn-primary { display: inline-flex; align-items: center; gap: 6px; padding: 10px 22px; background: var(--primary); color: white; border: none; border-radius: var(--radius-sm); font-weight: 600; font-size: .9rem; cursor: pointer; transition: all var(--transition-fast); box-shadow: var(--shadow-sm); font-family: var(--font-sans); }
+.btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn-secondary { display: inline-flex; align-items: center; gap: 6px; padding: 10px 22px; background: var(--white); color: var(--slate); border: 1px solid var(--slate-lighter); border-radius: var(--radius-sm); font-weight: 500; font-size: .9rem; cursor: pointer; transition: all var(--transition-fast); font-family: var(--font-sans); }
+.btn-secondary:hover { background: var(--warm-stone); color: var(--charcoal); }
+.btn-launch { display: inline-flex; align-items: center; gap: 10px; padding: 14px 36px; background: linear-gradient(135deg, var(--primary) 0%, #1e40af 100%); color: white; border: none; border-radius: var(--radius-sm); font-weight: 700; font-size: 1rem; cursor: pointer; transition: all var(--transition-fast); box-shadow: 0 4px 14px rgba(37,99,235,.4); font-family: var(--font-sans); }
+.btn-launch:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(37,99,235,.45); }
+.btn-pill { display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; background: var(--primary-light); color: var(--primary); border: 1px solid var(--primary-mid); border-radius: var(--radius-full); font-size: .8125rem; font-weight: 600; cursor: pointer; transition: all var(--transition-fast); font-family: var(--font-sans); }
+.btn-pill:hover { background: var(--primary); color: white; }
+
+/* ── Report Header ── */
+.report-header { padding: 32px 40px 24px; background: var(--white); border-bottom: 1px solid var(--charcoal-08); }
+.report-title-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.report-title { font-size: 1.75rem; font-weight: 800; color: var(--charcoal); margin: 0 0 6px; letter-spacing: -.03em; }
+.title-underline { width: 40px; height: 3px; background: linear-gradient(90deg, var(--primary), #60a5fa); border-radius: var(--radius-full); }
+.breadcrumb-back { display: inline-flex; align-items: center; gap: 6px; font-size: .8125rem; font-weight: 500; color: var(--slate); margin-bottom: 16px; cursor: pointer; }
+.breadcrumb-back:hover { color: var(--primary); }
+.back-arrow { display: flex; align-items: center; width: 24px; height: 24px; border-radius: var(--radius-xs); background: var(--warm-stone); justify-content: center; }
+
+/* ── Table ── */
+.table-section { padding: 24px 40px 40px; }
+.table-wrap { background: var(--white); border-radius: var(--radius-md); border: 1px solid var(--charcoal-08); box-shadow: var(--shadow-sm); overflow: hidden; }
+.campaign-table { width: 100%; border-collapse: collapse; }
+.campaign-table thead th { background: var(--warm-stone); color: var(--slate); font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; padding: 14px 20px; text-align: left; border-bottom: 1px solid var(--charcoal-08); }
+.campaign-table tbody td { padding: 16px 20px; font-size: .9rem; color: var(--charcoal); border-bottom: 1px solid var(--charcoal-08); vertical-align: middle; }
+.campaign-table tbody tr:last-child td { border-bottom: none; }
+.campaign-table tbody tr:hover { background: var(--bg-main); }
+
+/* ── Realtime Badge ── */
+.realtime-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: var(--radius-full); font-size: .75rem; font-weight: 600; background: var(--success-light); color: var(--success); border: 1px solid rgba(16,185,129,.2); }
+.realtime-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.6;transform:scale(1.3)} }
+
+/* ── Stat Cards ── */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; padding: 24px 40px; }
+.stat-card { background: var(--white); border-radius: var(--radius-md); border: 1px solid var(--charcoal-08); box-shadow: var(--shadow-sm); padding: 24px 20px; text-align: center; transition: all var(--transition-fast); }
+.stat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: var(--primary-mid); }
+.stat-label { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--slate); margin-bottom: 8px; }
+.stat-value { font-size: 2rem; font-weight: 800; color: var(--charcoal); letter-spacing: -.03em; line-height: 1; }
+
+/* ── SendGrid Gate ── */
+.sg-gate { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 32px; }
+.sg-card { background: var(--white); border-radius: var(--radius-xl); box-shadow: var(--shadow-xl); border: 1px solid var(--charcoal-08); padding: 48px 40px; max-width: 480px; width: 100%; text-align: center; }
+.sg-card h2 { font-size: 1.5rem; font-weight: 700; color: var(--charcoal); margin-bottom: 10px; letter-spacing: -.02em; }
+.sg-card p { color: var(--slate); font-size: .95rem; margin-bottom: 28px; }
+.sg-btns { display: flex; gap: 12px; justify-content: center; }
+.sg-yes { padding: 12px 28px; background: var(--primary); color: white; border: none; border-radius: var(--radius-sm); font-weight: 600; font-size: .95rem; cursor: pointer; transition: all var(--transition-fast); box-shadow: var(--shadow-sm); font-family: var(--font-sans); }
+.sg-yes:hover { background: var(--primary-hover); transform: translateY(-1px); }
+.sg-no { padding: 12px 28px; background: var(--white); color: var(--slate); border: 1px solid var(--slate-lighter); border-radius: var(--radius-sm); font-weight: 600; font-size: .95rem; cursor: pointer; transition: all var(--transition-fast); font-family: var(--font-sans); }
+.sg-no:hover { background: var(--warm-stone); }
+
+/* ── Modal ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,.5); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.modal { background: var(--white); border-radius: var(--radius-xl); box-shadow: var(--shadow-xl); padding: 40px; max-width: 440px; width: 100%; text-align: center; }
+.modal-title { font-size: 1.25rem; font-weight: 700; color: var(--charcoal); margin-bottom: 12px; }
+.modal-body { color: var(--slate); font-size: .9375rem; line-height: 1.6; margin-bottom: 28px; }
+.modal-actions { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.check-circle { width: 64px; height: 64px; border-radius: 50%; background: var(--primary-light); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; border: 2px solid var(--primary-mid); }
+
+/* ── Toast ── */
+.toast { display: flex; align-items: flex-start; gap: 12px; padding: 14px 18px; background: var(--white); border-radius: var(--radius-md); box-shadow: var(--shadow-xl); border: 1px solid var(--charcoal-08); min-width: 300px; }
+.toast.success { border-left: 4px solid var(--success); }
+.toast.error { border-left: 4px solid var(--danger); }
+.toast.info { border-left: 4px solid var(--primary); }
+.toast-title { font-weight: 600; font-size: .9rem; margin-bottom: 2px; }
+.toast-message { font-size: .85rem; color: var(--slate); }
+
+/* ── Preview Sections ── */
+.preview-section { padding: 40px; border-bottom: 1px solid var(--charcoal-08); }
+.preview-section:last-child { border-bottom: none; }
+.preview-section-title { font-size: 1.125rem; font-weight: 700; color: var(--charcoal); margin-bottom: 8px; }
+.preview-section-desc { font-size: .875rem; color: var(--slate); margin-bottom: 24px; }
+.component-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+/* ── Color Palette ── */
+.palette { display: flex; gap: 12px; flex-wrap: wrap; }
+.swatch { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.swatch-color { width: 56px; height: 56px; border-radius: var(--radius-sm); box-shadow: var(--shadow-sm); }
+.swatch-label { font-size: .7rem; font-weight: 600; color: var(--slate); text-align: center; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--slate-lighter); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--slate-light); }
+
+/* ── Page nav ── */
+.page-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 500; background: var(--white); border-bottom: 1px solid var(--charcoal-08); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: var(--shadow-sm); }
+.page-nav-title { font-weight: 700; font-size: .9rem; color: var(--charcoal); }
+.page-nav-tabs { display: flex; gap: 4px; }
+.page-tab { padding: 6px 14px; border-radius: var(--radius-full); font-size: .8rem; font-weight: 500; cursor: pointer; border: none; background: transparent; color: var(--slate); transition: all var(--transition-fast); font-family: var(--font-sans); }
+.page-tab.active, .page-tab:hover { background: var(--primary-light); color: var(--primary); }
+.page-content { margin-top: 52px; }
+
+/* ── Screens ── */
+.screen { display: none; }
+.screen.active { display: block; }
+</style>
+</head>
+<body>
+
+<!-- Top Navigation for Preview -->
+<nav class="page-nav">
+  <span class="page-nav-title">🎨 CampaignBuddy — UI Redesign Preview</span>
+  <div class="page-nav-tabs">
+    <button class="page-tab active" onclick="showScreen('screen-new-campaign')">New Campaign</button>
+    <button class="page-tab" onclick="showScreen('screen-history')">Campaign History</button>
+    <button class="page-tab" onclick="showScreen('screen-analytics')">Analytics</button>
+    <button class="page-tab" onclick="showScreen('screen-gate')">API Gate</button>
+    <button class="page-tab" onclick="showScreen('screen-components')">Components</button>
+  </div>
+</nav>
+
+<div class="page-content">
+
+  <!-- ── Screen 1: New Campaign ── -->
+  <div id="screen-new-campaign" class="screen active">
+    <div class="preview-wrapper" style="height: calc(100vh - 52px);">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-logo">
+            <div class="logo-icon-dark">
+              <svg width="18" height="18" viewBox="0 0 28 28" fill="none">
+                <rect width="12" height="12" rx="3" fill="white"/>
+                <rect x="16" width="12" height="12" rx="3" fill="white" opacity="0.6"/>
+                <rect y="16" width="12" height="12" rx="3" fill="white" opacity="0.6"/>
+                <rect x="16" y="16" width="12" height="12" rx="3" fill="white" opacity="0.3"/>
+              </svg>
+            </div>
+            <span class="sidebar-logo-text">CampaignBuddy</span>
+          </div>
+          <button class="collapse-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
+          </button>
+        </div>
+        <nav class="sidebar-nav">
+          <div class="nav-item active">
+            <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span>
+            <span>New Campaign</span>
+            <span class="active-bar"></span>
+          </div>
+          <div class="nav-item">
+            <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+            <span>Campaign History</span>
+          </div>
+          <div class="nav-item">
+            <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></span>
+            <span>Outreach Analytics</span>
+          </div>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="user-row">
+            <span class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+            <span class="user-email">user@company.com</span>
+          </div>
+          <button class="logout-btn">
+            <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
+            Sign Out
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="main">
+        <!-- Parallax Header -->
+        <div class="parallax-header">
+          <div class="parallax-bg" style="background-image: url('https://images.unsplash.com/photo-1497366216548-37526070297c?w=1400&q=80&auto=format&fit=crop');"></div>
+          <div class="parallax-overlay"></div>
+          <div class="parallax-content">
+            <h1 class="parallax-title">New Campaign</h1>
+            <p class="parallax-subtitle">Define your target audience and launch your AI-powered outreach.</p>
+          </div>
+          <button class="autofill-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Autofill
+          </button>
+        </div>
+
+        <!-- Wizard -->
+        <div class="wizard-layout">
+          <div class="wizard-form">
+            <!-- Step 1 -->
+            <div class="section-divider"><span class="section-label">Your Campaign</span></div>
+            <div class="form-field">
+              <label>Campaign Name</label>
+              <input type="text" placeholder="e.g. Q2 Enterprise Outbound" value="Q2 Enterprise Outbound"/>
+            </div>
+            <div class="form-field">
+              <label>Primary Goal</label>
+              <select><option>Book discovery calls</option></select>
+            </div>
+            <div class="form-field">
+              <label>Value Proposition</label>
+              <textarea rows="2" placeholder="Describe the value proposition...">We help SaaS companies reduce churn by 40% using AI-powered customer success automation.</textarea>
+            </div>
+            <div class="form-field">
+              <label>CTA Link</label>
+              <input type="url" placeholder="https://example.com/book-demo" value="https://acme.com/book-demo"/>
+            </div>
+            <button class="btn-primary" style="margin-top:4px;">Next →</button>
+
+            <div style="margin-top:32px;">
+              <div class="section-divider"><span class="section-label">Sender Identity</span></div>
+              <div class="form-row-2">
+                <div class="form-field">
+                  <label>Sender Name</label>
+                  <input type="text" value="Alex Morgan"/>
+                </div>
+                <div class="form-field">
+                  <label>Role</label>
+                  <input type="text" value="Head of Partnerships"/>
+                </div>
+              </div>
+              <div class="form-field">
+                <label>Sending Email</label>
+                <input type="email" value="alex@acmecorp.com"/>
+              </div>
+            </div>
+
+            <div style="margin-top:32px;">
+              <div class="section-divider"><span class="section-label">Campaign Scale</span></div>
+              <div class="form-field">
+                <label>Number of Prospects</label>
+                <input type="number" value="250"/>
+              </div>
+              <button class="btn-launch" style="margin-top:16px;">
+                <span>Launch Campaign</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Preview Panel -->
+          <div class="wizard-preview">
+            <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--slate);margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--charcoal-08);">Live Preview</div>
+            <div style="background:var(--warm-stone);border-radius:var(--radius-md);padding:20px;margin-bottom:16px;">
+              <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--slate);margin-bottom:6px;">Campaign</div>
+              <div style="font-weight:700;color:var(--charcoal);font-size:1rem;">Q2 Enterprise Outbound</div>
+              <div style="font-size:.85rem;color:var(--slate);margin-top:4px;">Book discovery calls</div>
+            </div>
+            <div style="background:var(--warm-stone);border-radius:var(--radius-md);padding:20px;margin-bottom:16px;">
+              <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--slate);margin-bottom:6px;">Sender</div>
+              <div style="font-weight:600;color:var(--charcoal);">Alex Morgan</div>
+              <div style="font-size:.85rem;color:var(--slate);">Head of Partnerships · alex@acmecorp.com</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div style="background:var(--primary-light);border-radius:var(--radius-md);padding:16px;text-align:center;border:1px solid var(--primary-mid);">
+                <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--primary);margin-bottom:6px;">Prospects</div>
+                <div style="font-size:1.75rem;font-weight:800;color:var(--primary);">250</div>
+              </div>
+              <div style="background:var(--success-light);border-radius:var(--radius-md);padding:16px;text-align:center;border:1px solid rgba(16,185,129,.2);">
+                <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--success);margin-bottom:6px;">Status</div>
+                <div style="font-size:.9rem;font-weight:700;color:var(--success);">Ready</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Screen 2: Campaign History ── -->
+  <div id="screen-history" class="screen">
+    <div class="preview-wrapper" style="height: calc(100vh - 52px);">
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-logo">
+            <div class="logo-icon-dark"><svg width="18" height="18" viewBox="0 0 28 28" fill="none"><rect width="12" height="12" rx="3" fill="white"/><rect x="16" width="12" height="12" rx="3" fill="white" opacity="0.6"/><rect y="16" width="12" height="12" rx="3" fill="white" opacity="0.6"/><rect x="16" y="16" width="12" height="12" rx="3" fill="white" opacity="0.3"/></svg></div>
+            <span class="sidebar-logo-text">CampaignBuddy</span>
+          </div>
+        </div>
+        <nav class="sidebar-nav">
+          <div class="nav-item"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span><span>New Campaign</span></div>
+          <div class="nav-item active"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span><span>Campaign History</span><span class="active-bar"></span></div>
+          <div class="nav-item"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></span><span>Outreach Analytics</span></div>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="user-row"><span class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><span class="user-email">user@company.com</span></div>
+          <button class="logout-btn"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>Sign Out</button>
+        </div>
+      </div>
+      <div class="main">
+        <div class="report-header">
+          <div class="breadcrumb-back">
+            <span class="back-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></span>
+            New Campaign
+          </div>
+          <div class="report-title-row">
+            <div>
+              <div class="report-title">Campaign History</div>
+              <div class="title-underline"></div>
+            </div>
+            <button class="btn-pill">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              Refresh
+            </button>
+          </div>
+        </div>
+        <div class="table-section">
+          <div class="table-wrap">
+            <table class="campaign-table">
+              <thead>
+                <tr><th>Campaign Name</th><th>Sent</th><th></th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Q2 Enterprise Outbound</strong></td>
+                  <td><span style="background:var(--success-light);color:var(--success);padding:3px 10px;border-radius:var(--radius-full);font-size:.8rem;font-weight:600;">247 emails</span></td>
+                  <td><button class="btn-pill">View Detail</button></td>
+                </tr>
+                <tr>
+                  <td><strong>SaaS Founders Outreach</strong></td>
+                  <td><span style="background:var(--success-light);color:var(--success);padding:3px 10px;border-radius:var(--radius-full);font-size:.8rem;font-weight:600;">183 emails</span></td>
+                  <td><button class="btn-pill">View Detail</button></td>
+                </tr>
+                <tr>
+                  <td><strong>FinTech Decision Makers</strong></td>
+                  <td><span style="background:var(--primary-light);color:var(--primary);padding:3px 10px;border-radius:var(--radius-full);font-size:.8rem;font-weight:600;">In Progress</span></td>
+                  <td><button class="btn-pill">View Detail</button></td>
+                </tr>
+                <tr>
+                  <td><strong>Healthcare CTO Blitz</strong></td>
+                  <td><span style="background:var(--success-light);color:var(--success);padding:3px 10px;border-radius:var(--radius-full);font-size:.8rem;font-weight:600;">312 emails</span></td>
+                  <td><button class="btn-pill">View Detail</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Screen 3: Analytics ── -->
+  <div id="screen-analytics" class="screen">
+    <div class="preview-wrapper" style="height: calc(100vh - 52px);">
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-logo">
+            <div class="logo-icon-dark"><svg width="18" height="18" viewBox="0 0 28 28" fill="none"><rect width="12" height="12" rx="3" fill="white"/><rect x="16" width="12" height="12" rx="3" fill="white" opacity="0.6"/><rect y="16" width="12" height="12" rx="3" fill="white" opacity="0.6"/><rect x="16" y="16" width="12" height="12" rx="3" fill="white" opacity="0.3"/></svg></div>
+            <span class="sidebar-logo-text">CampaignBuddy</span>
+          </div>
+        </div>
+        <nav class="sidebar-nav">
+          <div class="nav-item"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span><span>New Campaign</span></div>
+          <div class="nav-item"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span><span>Campaign History</span></div>
+          <div class="nav-item active"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></span><span>Outreach Analytics</span><span class="active-bar"></span></div>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="user-row"><span class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><span class="user-email">user@company.com</span></div>
+          <button class="logout-btn"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>Sign Out</button>
+        </div>
+      </div>
+      <div class="main">
+        <div class="report-header">
+          <div class="report-title-row">
+            <div>
+              <div class="report-title">Outreach Analytics</div>
+              <div class="title-underline"></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <label style="font-size:.8125rem;color:var(--slate);font-weight:500;">Campaign:</label>
+              <select style="padding:9px 36px 9px 14px;border:1px solid var(--slate-lighter);border-radius:var(--radius-sm);font-size:.875rem;font-family:var(--font-sans);background:var(--white);color:var(--charcoal);min-width:220px;cursor:pointer;appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'8\' viewBox=\'0 0 12 8\'%3E%3Cpath d=\'M1 1l5 5 5-5\' stroke=\'%2364748b\' stroke-width=\'1.5\' fill=\'none\' stroke-linecap=\'round\' stroke-linejoin=\'round\'/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 14px center;">
+                <option>Q2 Enterprise Outbound</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-label">Delivered</div><div class="stat-value" style="color:var(--primary);">247</div></div>
+          <div class="stat-card"><div class="stat-label">Opens</div><div class="stat-value" style="color:var(--success);">89</div></div>
+          <div class="stat-card"><div class="stat-label">Clicks</div><div class="stat-value" style="color:var(--warning);">34</div></div>
+          <div class="stat-card"><div class="stat-label">Bounces</div><div class="stat-value" style="color:var(--danger);">3</div></div>
+          <div class="stat-card"><div class="stat-label">Spam Reports</div><div class="stat-value">0</div></div>
+          <div class="stat-card"><div class="stat-label">Unsubscribes</div><div class="stat-value">2</div></div>
+          <div class="stat-card"><div class="stat-label">Blocks</div><div class="stat-value">1</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Screen 4: API Gate ── -->
+  <div id="screen-gate" class="screen">
+    <div class="sg-gate" style="height:calc(100vh - 52px);">
+      <div class="sg-card">
+        <div style="width:56px;height:56px;border-radius:var(--radius-md);background:linear-gradient(135deg,var(--primary) 0%,#1e40af 100%);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;box-shadow:0 4px 14px rgba(37,99,235,.35);">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+        </div>
+        <h2>Do you have a SendGrid API Key?</h2>
+        <p>A SendGrid API key is required to send campaign emails. It only takes a minute to set up.</p>
+        <div class="sg-btns">
+          <button class="sg-yes">Yes, I have one</button>
+          <button class="sg-no">No, get one</button>
+        </div>
+        <div style="margin-top:24px;text-align:left;">
+          <label style="display:block;font-size:.875rem;font-weight:500;color:var(--slate);margin-bottom:8px;">Enter your SendGrid API Key</label>
+          <input type="text" placeholder="SG.xxxxxxxxxxxxxxxx" style="width:100%;padding:11px 14px;border:1px solid var(--slate-lighter);border-radius:var(--radius-sm);font-size:.95rem;color:var(--charcoal);background:var(--white);box-sizing:border-box;font-family:var(--font-sans);"/>
+          <button class="sg-yes" style="margin-top:14px;width:100%;">Continue →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Screen 5: Components ── -->
+  <div id="screen-components" class="screen">
+    <div style="max-width:900px;margin:0 auto;padding:40px;">
+
+      <!-- Color Palette -->
+      <div class="preview-section" style="border:1px solid var(--charcoal-08);border-radius:var(--radius-lg);margin-bottom:24px;background:var(--white);">
+        <div class="preview-section-title">Color Palette</div>
+        <div class="preview-section-desc">Enterprise-grade color system with clear semantic meaning.</div>
+        <div class="palette">
+          <div class="swatch"><div class="swatch-color" style="background:#2563eb;"></div><div class="swatch-label">Primary<br/>#2563EB</div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#1d4ed8;"></div><div class="swatch-label">Primary Hover<br/>#1D4ED8</div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#eff6ff;border:1px solid #bfdbfe;"></div><div class="swatch-label">Primary Light<br/>#EFF6FF</div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#0f172a;"></div><div class="swatch-label">Charcoal<br/>#0F172A</div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#64748b;"></div><div class="swatch-label">Slate<br/>#64748B</div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#f8fafc;border:1px solid #e2e8f0;"></div><div class="swatch-label">BG Main<br/>#F8FAFC</div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#f1f5f9;border:1px solid #e2e8f0;"></div><div class="swatch-label">Warm Stone<br/>#F1F5F9</div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#10b981;"></div><div class="swatch-label">Success<br/>#10B981</div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#f59e0b;"></div><div class="swatch-label">Warning<br/>#F59E0B</div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#ef4444;"></div><div class="swatch-label">Danger<br/>#EF4444</div></div>
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="preview-section" style="border:1px solid var(--charcoal-08);border-radius:var(--radius-lg);margin-bottom:24px;background:var(--white);">
+        <div class="preview-section-title">Buttons</div>
+        <div class="preview-section-desc">All button variants with hover states and consistent sizing.</div>
+        <div class="component-row">
+          <button class="btn-primary">Primary Action</button>
+          <button class="btn-secondary">Secondary</button>
+          <button class="btn-pill">Pill Button</button>
+          <button class="btn-launch">Launch Campaign <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
+          <button style="padding:10px 22px;background:var(--danger);color:white;border:none;border-radius:var(--radius-sm);font-weight:600;font-size:.9rem;cursor:pointer;font-family:var(--font-sans);">Delete</button>
+          <button style="padding:10px 22px;background:var(--success);color:white;border:none;border-radius:var(--radius-sm);font-weight:600;font-size:.9rem;cursor:pointer;font-family:var(--font-sans);">Re-run</button>
+        </div>
+      </div>
+
+      <!-- Form Fields -->
+      <div class="preview-section" style="border:1px solid var(--charcoal-08);border-radius:var(--radius-lg);margin-bottom:24px;background:var(--white);">
+        <div class="preview-section-title">Form Fields</div>
+        <div class="preview-section-desc">Clean inputs with focus states and validation indicators.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-field"><label>Text Input</label><input type="text" placeholder="Enter value..."/></div>
+          <div class="form-field"><label>Select Dropdown</label><select><option>Select an option</option><option>Book discovery calls</option><option>Generate warm leads</option></select></div>
+          <div class="form-field"><label>Email Input</label><input type="email" placeholder="user@example.com"/></div>
+          <div class="form-field"><label>Number Input</label><input type="number" value="250"/></div>
+          <div class="form-field" style="grid-column:span 2;"><label>Textarea</label><textarea rows="3" placeholder="Enter detailed description..."></textarea></div>
+        </div>
+      </div>
+
+      <!-- Toasts -->
+      <div class="preview-section" style="border:1px solid var(--charcoal-08);border-radius:var(--radius-lg);margin-bottom:24px;background:var(--white);">
+        <div class="preview-section-title">Toast Notifications</div>
+        <div class="preview-section-desc">Contextual feedback messages with semantic color coding.</div>
+        <div style="display:flex;flex-direction:column;gap:10px;max-width:420px;">
+          <div class="toast success">
+            <span style="color:var(--success);font-size:1.1rem;">✓</span>
+            <div><div class="toast-title" style="color:var(--success);">Campaign Launched</div><div class="toast-message">Your campaign is now live and reaching prospects.</div></div>
+          </div>
+          <div class="toast error">
+            <span style="color:var(--danger);font-size:1.1rem;">✕</span>
+            <div><div class="toast-title" style="color:var(--danger);">Error</div><div class="toast-message">API key must start with SG.</div></div>
+          </div>
+          <div class="toast info">
+            <span style="color:var(--primary);font-size:1.1rem;">ℹ</span>
+            <div><div class="toast-title" style="color:var(--primary);">Processing</div><div class="toast-message">AI is generating personalized emails for 250 prospects.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Typography -->
+      <div class="preview-section" style="border:1px solid var(--charcoal-08);border-radius:var(--radius-lg);margin-bottom:24px;background:var(--white);">
+        <div class="preview-section-title">Typography — Inter Font</div>
+        <div class="preview-section-desc">Consistent type scale with clear visual hierarchy.</div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div style="font-size:2rem;font-weight:800;color:var(--charcoal);letter-spacing:-.03em;">Display / Page Title — 800</div>
+          <div style="font-size:1.5rem;font-weight:700;color:var(--charcoal);letter-spacing:-.02em;">Section Heading — 700</div>
+          <div style="font-size:1.125rem;font-weight:600;color:var(--charcoal);">Card Title — 600</div>
+          <div style="font-size:1rem;font-weight:500;color:var(--charcoal);">Body Text — 500</div>
+          <div style="font-size:.875rem;font-weight:400;color:var(--slate);">Secondary / Label — 400</div>
+          <div style="font-size:.75rem;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.08em;">Caption / Badge — 700 Uppercase</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.page-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
