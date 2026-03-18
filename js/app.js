@@ -269,7 +269,7 @@ function resetCampaignForm() {
   ];
   textFields.forEach(function(id) {
     var el = document.getElementById(id);
-    if (el) el.value = '';
+    if (el && !el.readOnly) el.value = '';
   });
 
   // Reset selects to first option
@@ -303,9 +303,13 @@ function resetCampaignForm() {
     toggleAudienceSource('new');
   }
 
-  // Reset file input
-  var fileInput = document.getElementById('new-lead-file');
-  if (fileInput) fileInput.value = '';
+  // Reset file input and previews
+  if (typeof resetLeadFile === 'function') {
+    resetLeadFile('new');
+  } else {
+    var fileInput = document.getElementById('new-lead-file');
+    if (fileInput) fileInput.value = '';
+  }
 
   // Reset slider to 250
   var slider = document.getElementById('campaign-scale');
@@ -600,14 +604,7 @@ async function epLaunch() {
     document.getElementById('new-campaign-header').style.display = '';
     document.getElementById('wizard-layout').style.display = '';
     _previewPayload = null;
-    // Reset wizard to step 1
-    document.querySelectorAll('[data-wizard-step]').forEach((el, i) => {
-      if (i === 0) el.classList.add('step-visible');
-      else el.classList.remove('step-visible');
-    });
-    document.querySelectorAll('input:not([type=radio]):not([type=checkbox]), textarea, select').forEach(el => {
-      if (el.closest('#page-new-campaign')) el.value = '';
-    });
+    if (typeof resetCampaignForm === 'function') resetCampaignForm();
     window.scrollTo({ top: 0, behavior: 'smooth' });
     showToast('Campaign launched successfully!', 'success');
   }, 3000);
@@ -780,10 +777,13 @@ async function openConfirmModal() {
 }
 function closeConfirmModal() {
   document.getElementById('confirm-modal').classList.add('hidden');
+  if (typeof resetCampaignForm === 'function') resetCampaignForm();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
   showToast('Campaign launched successfully!', 'success');
 }
 function closeConfirmModalAndGo() {
   document.getElementById('confirm-modal').classList.add('hidden');
+  if (typeof resetCampaignForm === 'function') resetCampaignForm();
   navigateTo('campaign-report');
 }
 function closeModalOnBackdrop(e) {
