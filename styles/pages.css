@@ -114,7 +114,12 @@
 }
 
 .wizard-section {
-    margin-bottom: 40px;
+    display: none;
+    margin-bottom: 48px;
+}
+
+.wizard-section.step-visible {
+    display: block;
 }
 
 /* Slider */
@@ -127,9 +132,9 @@
     position: absolute;
     top: 0;
     transform: translateX(-50%);
-    background: #18181B;
-    color: #FFFFFF;
-    font-size: 12px;
+    background: var(--primary);
+    color: var(--white);
+    font-size: 0.75rem;
     font-weight: 600;
     padding: 3px 10px;
     border-radius: 4px;
@@ -146,7 +151,7 @@
     transform: translateX(-50%);
     border-left: 4px solid transparent;
     border-right: 4px solid transparent;
-    border-top: 4px solid #18181B;
+    border-top: 4px solid var(--primary);
 }
 
 .custom-slider {
@@ -165,7 +170,7 @@
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    background: #18181B;
+    background: var(--primary);
     cursor: pointer;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     border: 3px solid #FFFFFF;
@@ -180,7 +185,7 @@
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    background: #18181B;
+    background: var(--primary);
     cursor: pointer;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     border: 3px solid #FFFFFF;
@@ -206,11 +211,11 @@
     justify-content: center;
     gap: 0;
     width: 100%;
-    height: 44px;
-    background: #18181B;
-    color: #FFFFFF;
-    border-radius: 6px;
-    font-size: 14px;
+    height: 52px;
+    background: var(--primary);
+    color: var(--white);
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
     font-weight: 600;
     position: relative;
     overflow: hidden;
@@ -218,11 +223,8 @@
 }
 
 .btn-launch:hover {
-    background: #27272A;
-}
-
-.btn-launch:active {
-    transform: scale(0.99);
+    background: var(--primary-hover);
+    box-shadow: var(--shadow-md);
 }
 
 .launch-arrow {
@@ -410,9 +412,9 @@
 .report-title-underline {
     height: 2px;
     width: 0;
-    background: #18181B;
-    margin-top: 4px;
-    animation: sweepIn 500ms 150ms ease forwards;
+    background: var(--primary);
+    margin-top: 6px;
+    animation: sweepIn 600ms 200ms ease forwards;
 }
 
 @keyframes sweepIn {
@@ -436,8 +438,8 @@
 }
 
 .report-tab.active {
-    color: #09090B;
-    border-color: #18181B;
+    color: var(--primary);
+    border-color: var(--primary);
     font-weight: 600;
 }
 
@@ -612,7 +614,7 @@
     position: absolute;
     bottom: -1px;
     height: 2px;
-    background: #18181B;
+    background: var(--primary);
     border-radius: 1px;
     width: 72px;
     left: 0;
@@ -857,15 +859,14 @@
 .btn-open-detail {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 0 10px;
-    height: 28px;
-    border-radius: 6px;
-    background: #FFFFFF;
-    color: #09090B;
-    font-size: 12px;
-    font-weight: 500;
-    border: 1px solid #E4E4E7;
+    gap: 5px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    background: var(--primary);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: none;
     cursor: pointer;
     transition: all 0.15s ease;
     white-space: nowrap;

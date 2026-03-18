@@ -247,10 +247,27 @@ function resetCampaignForm() {
     if (el) el.selectedIndex = 0;
   });
 
-  // Reset audience source radio to default (existing_lead)
-  var defaultRadio = document.querySelector('input[name="audience-source"][value="existing_lead"]');
+  // Reset audience source — disable 'Use Existing Lead' until email is verified
+  var defaultRadio = document.getElementById('existing-lead-radio');
   if (defaultRadio) {
-    defaultRadio.checked = true;
+    defaultRadio.disabled = true;
+    defaultRadio.style.cursor = 'not-allowed';
+    defaultRadio.style.opacity = '0.45';
+  }
+  var existingLabel = document.getElementById('existing-lead-label');
+  if (existingLabel) {
+    existingLabel.style.opacity = '0.45';
+    existingLabel.style.cursor = 'not-allowed';
+  }
+  // Hide the lead dropdown
+  var leadDropSection = document.getElementById('existing-lead-dropdown-section');
+  if (leadDropSection) leadDropSection.style.display = 'none';
+  var leadSelect = document.getElementById('existing-lead-select');
+  if (leadSelect) leadSelect.innerHTML = '<option value="">-- Select a lead list --</option>';
+  // Default to 'custom' radio since existing_lead is disabled
+  var customRadio = document.querySelector('input[name="audience-source"][value="custom"]');
+  if (customRadio) {
+    customRadio.checked = true;
     toggleAudienceSource('new');
   }
 
@@ -795,6 +812,9 @@ window.checkLeadsOwner = async function () {
     if (!res.ok) return;
     const rows = await res.json();
 
+    const existingRadio = document.getElementById('existing-lead-radio');
+    const existingLabel = document.getElementById('existing-lead-label');
+
     if (rows && rows.length > 0) {
       // Populate dropdown with found lead names
       select.innerHTML = '<option value="">-- Select a lead list --</option>';
@@ -806,16 +826,41 @@ window.checkLeadsOwner = async function () {
       });
       dropdownSection.style.display = 'block';
 
+      // Enable the 'Use Existing Lead' radio and restore its appearance
+      if (existingRadio) {
+        existingRadio.disabled = false;
+        existingRadio.style.cursor = '';
+        existingRadio.style.opacity = '';
+      }
+      if (existingLabel) {
+        existingLabel.style.opacity = '';
+        existingLabel.style.cursor = '';
+      }
+
       // Auto-select 'Use Existing Lead' radio if not already selected
-      const existingRadio = document.querySelector('input[name="audience-source"][value="existing_lead"]');
       if (existingRadio && !existingRadio.checked) {
         existingRadio.checked = true;
         toggleAudienceSource('new');
       }
     } else {
-      // No leads found — hide dropdown
+      // No leads found — hide dropdown and disable radio
       dropdownSection.style.display = 'none';
       select.innerHTML = '<option value="">-- Select a lead list --</option>';
+
+      if (existingRadio) {
+        existingRadio.disabled = true;
+        existingRadio.style.cursor = 'not-allowed';
+        existingRadio.style.opacity = '0.45';
+        // If it was selected, switch to custom
+        if (existingRadio.checked) {
+          const customRadio = document.querySelector('input[name="audience-source"][value="custom"]');
+          if (customRadio) { customRadio.checked = true; toggleAudienceSource('new'); }
+        }
+      }
+      if (existingLabel) {
+        existingLabel.style.opacity = '0.45';
+        existingLabel.style.cursor = 'not-allowed';
+      }
     }
   } catch (err) {
     console.warn('[checkLeadsOwner] error:', err);

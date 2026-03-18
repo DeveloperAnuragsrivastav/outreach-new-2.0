@@ -7,38 +7,45 @@
 
 /* === DESIGN TOKENS === */
 :root {
-  /* Color system — light mode */
-  --charcoal: #09090B;
-  --charcoal-80: rgba(9, 9, 11, 0.8);
-  --charcoal-60: rgba(9, 9, 11, 0.6);
-  --charcoal-20: #E4E4E7;
-  --charcoal-08: #F4F4F5;
-  --charcoal-04: #FAFAFA;
-  --off-white: #FAFAFA;
-  --warm-stone: #F4F4F5;
-  --warm-stone-2: #E4E4E7;
-  --warm-paper: #FAFAFA;
-  --slate: #52525B;
-  --slate-light: #A1A1AA;
+  /* Brand & Core */
+  --primary: #2563EB;
+  --primary-hover: #1D4ED8;
+  --primary-light: #EFF6FF;
+  --primary-mid: #BFDBFE;
+
+  /* Neutrals */
+  --charcoal: #0F172A;
+  --charcoal-80: rgba(15, 23, 42, 0.8);
+  --charcoal-60: rgba(15, 23, 42, 0.6);
+  --charcoal-20: rgba(15, 23, 42, 0.2);
+  --charcoal-08: rgba(15, 23, 42, 0.08);
+  --charcoal-04: rgba(15, 23, 42, 0.04);
+  --slate: #64748B;
+  --slate-light: #94A3B8;
+  --slate-lighter: #CBD5E1;
+  --surface-2: #E2E8F0;
+
+  /* Backgrounds */
   --white: #FFFFFF;
-  --primary: #18181B;
-  --success: #16A34A;
-  --danger: #DC2626;
-  --focus-ring: #3B82F6;
+  --off-white: #F8FAFC;
+  --warm-stone: #F1F5F9;
+  --warm-stone-2: #E2E8F0;
+  --warm-paper: #F8FAFC;
 
-  /* Typography */
-  --font-heading: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-serif: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-accent: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
-
-  /* Layout */
-  --sidebar-width: 220px;
-  --sidebar-collapsed-width: 56px;
-  --topbar-height: 52px;
-
-  /* Radii */
+  /* Semantic */
+  --success: #10B981;
+  --success-light: #D1FAE5;
+  --warning: #F59E0B;
+  --warning-light: #FEF3C7;
+  --danger: #EF4444;
+  --danger-light: #FEE2E2;
+  --font-heading: 'Poppins', system-ui, sans-serif;
+  --font-serif: 'Poppins', system-ui, sans-serif;
+  --font-sans: 'Poppins', system-ui, sans-serif;
+  --font-accent: 'Montserrat', system-ui, sans-serif;
+  --sidebar-width: 240px;
+  --sidebar-collapsed-width: 64px;
+  --topbar-height: 60px;
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
