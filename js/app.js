@@ -469,7 +469,7 @@ async function launchPreview() {
     cta_link: document.getElementById('new-cta-link')?.value || '',
     lead_source: audienceSource,
     lead_name: audienceSource === 'existing_lead' ? (document.getElementById('existing-lead-select')?.value || '') : '',
-    lead_list_name: audienceSource === 'custom' ? leadListName : '',
+    lead_list_name: audienceSource === 'custom' ? leadListName : (audienceSource === 'existing_lead' ? (document.getElementById('existing-lead-select')?.value || '') : ''),
     sendgrid_api_key: sendgridApiKey || ''
   };
 
@@ -659,7 +659,7 @@ async function openConfirmModal() {
     cta_link: document.getElementById('new-cta-link')?.value || '',
     lead_source: audienceSource,
     lead_name: audienceSource === 'existing_lead' ? (document.getElementById('existing-lead-select')?.value || '') : '',
-    lead_list_name: audienceSource === 'custom' ? leadListName : '',
+    lead_list_name: audienceSource === 'custom' ? leadListName : (audienceSource === 'existing_lead' ? (document.getElementById('existing-lead-select')?.value || '') : ''),
     sendgrid_api_key: sendgridApiKey || ''
   };
 
