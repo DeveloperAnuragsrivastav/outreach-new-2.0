@@ -566,7 +566,7 @@ async function uploadLeadsToSaver() {
   // Disable button and show loading state
   btn.disabled = true;
   btn.style.opacity = '0.6';
-  btn.innerHTML = '<i data-lucide="loader" width="16" height="16" style="vertical-align:middle; margin-right:6px;"></i> Uploading...';
+  btn.innerHTML = '<i data-lucide="loader" width="16" height="16" style="vertical-align:middle; margin-right:6px;"></i> Submitting...';
   initIcons();
   if (statusEl) statusEl.textContent = '';
 
@@ -599,7 +599,7 @@ async function uploadLeadsToSaver() {
   } finally {
     btn.disabled = false;
     btn.style.opacity = '1';
-    btn.innerHTML = '<i data-lucide="upload-cloud" width="16" height="16" style="vertical-align:middle; margin-right:6px;"></i> Upload Leads';
+    btn.innerHTML = '<i data-lucide="upload-cloud" width="16" height="16" style="vertical-align:middle; margin-right:6px;"></i> Submit';
     initIcons();
   }
 }
