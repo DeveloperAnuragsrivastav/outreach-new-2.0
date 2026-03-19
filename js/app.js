@@ -468,6 +468,7 @@ async function launchPreview() {
     social_proof: document.getElementById('new-social-proof')?.value || '',
     cta_link: document.getElementById('new-cta-link')?.value || '',
     lead_source: audienceSource,
+    lead_name: audienceSource === 'existing_lead' ? (document.getElementById('existing-lead-select')?.value || '') : '',
     lead_list_name: audienceSource === 'custom' ? leadListName : '',
     sendgrid_api_key: sendgridApiKey || ''
   };
