@@ -599,16 +599,16 @@ async function epLaunch() {
   sendLoader.style.display = 'none';
   document.getElementById('ep-success').style.display = 'block';
 
-  // Reset form after a moment
+  // Reset form after 3 seconds and navigate to New Campaign
   setTimeout(() => {
     document.getElementById('email-preview-section').style.display = 'none';
     document.getElementById('new-campaign-header').style.display = '';
     document.getElementById('wizard-layout').style.display = '';
     _previewPayload = null;
     if (typeof resetCampaignForm === 'function') resetCampaignForm();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
     showToast('Campaign launched successfully!', 'success');
-  }, 1500);
+    navigateTo('new-campaign');
+  }, 3000);
 }
 
 // ── Confirmation modal (kept for internal reference) ───────────
