@@ -727,6 +727,12 @@ async function openConfirmModal() {
     path.style.animation = '';
   }
 
+  // Auto-close modal after 3.5 seconds and reset form
+  if (window._confirmModalTimer) clearTimeout(window._confirmModalTimer);
+  window._confirmModalTimer = setTimeout(function() {
+    if (!modal.classList.contains('hidden')) closeConfirmModal();
+  }, 3500);
+
   // Route to the correct webhook based on audience source
   const webhookTarget = (audienceSource === 'custom') ? WEBHOOK_URL_CUSTOM : WEBHOOK_URL;
 
@@ -777,18 +783,26 @@ async function openConfirmModal() {
     });
 }
 function closeConfirmModal() {
+  if (window._confirmModalTimer) clearTimeout(window._confirmModalTimer);
   document.getElementById('confirm-modal').classList.add('hidden');
   if (typeof resetCampaignForm === 'function') resetCampaignForm();
   window.scrollTo({ top: 0, behavior: 'smooth' });
   showToast('Campaign launched successfully!', 'success');
+  // Reset form and return to step 1 of the wizard
+  if (typeof resetCampaignForm === 'function') resetCampaignForm();
+  navigateTo('new-campaign');
 }
 function closeConfirmModalAndGo() {
+  if (window._confirmModalTimer) clearTimeout(window._confirmModalTimer);
   document.getElementById('confirm-modal').classList.add('hidden');
   if (typeof resetCampaignForm === 'function') resetCampaignForm();
   navigateTo('campaign-report');
 }
 function closeModalOnBackdrop(e) {
-  if (e.target === document.getElementById('confirm-modal')) closeConfirmModal();
+  if (e.target === document.getElementById('confirm-modal')) {
+    if (window._confirmModalTimer) clearTimeout(window._confirmModalTimer);
+    closeConfirmModal();
+  }
 }
 
 // ── Autofill ───────────────────────────────────────────────────
