@@ -546,6 +546,64 @@ async function launchPreview() {
   }
 }
 
+// ── uploadLeadsToSaver — Send uploaded file to lead-saver webhook ─────────
+async function uploadLeadsToSaver() {
+  const fileInput = document.getElementById('new-lead-file');
+  const leadListName = document.getElementById('new-lead-list-name')?.value.trim();
+  const statusEl = document.getElementById('lead-saver-upload-status');
+  const btn = document.getElementById('lead-saver-upload-btn');
+
+  if (!leadListName) {
+    showToast('Please enter a Lead List Name first.', 'error');
+    document.getElementById('new-lead-list-name')?.focus();
+    return;
+  }
+  if (!fileInput.files || fileInput.files.length === 0) {
+    showToast('Please select a file to upload.', 'error');
+    return;
+  }
+
+  // Disable button and show loading state
+  btn.disabled = true;
+  btn.style.opacity = '0.6';
+  btn.innerHTML = '<i data-lucide="loader" width="16" height="16" style="vertical-align:middle; margin-right:6px;"></i> Uploading...';
+  initIcons();
+  if (statusEl) statusEl.textContent = '';
+
+  try {
+    const rows = await parseLeadFile(fileInput.files[0]);
+    const payload = {
+      lead_list_name: leadListName,
+      lead_file_name: fileInput.files[0].name,
+      owner_email: document.getElementById('sender-email')?.value || '',
+      rows: rows
+    };
+
+    const res = await fetch('https://n8n.gignaati.com/webhook/lead-saver', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      if (statusEl) { statusEl.textContent = '✓ Uploaded successfully'; statusEl.style.color = 'var(--success, #16a34a)'; }
+      showToast('Leads uploaded successfully!', 'success');
+    } else {
+      const errText = await res.text();
+      if (statusEl) { statusEl.textContent = 'Upload failed'; statusEl.style.color = 'var(--danger)'; }
+      showToast('Upload failed: ' + (errText || res.status), 'error');
+    }
+  } catch (err) {
+    if (statusEl) { statusEl.textContent = 'Upload failed'; statusEl.style.color = 'var(--danger)'; }
+    showToast('Upload failed: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.innerHTML = '<i data-lucide="upload-cloud" width="16" height="16" style="vertical-align:middle; margin-right:6px;"></i> Upload Leads';
+    initIcons();
+  }
+}
+
 // ── epEdit — Go back to form without clearing it ───────────────
 function epEdit() {
   document.getElementById('email-preview-section').style.display = 'none';
