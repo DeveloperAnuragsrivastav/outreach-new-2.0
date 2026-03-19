@@ -572,7 +572,7 @@ async function epLaunch() {
   const sendInterval = setInterval(() => {
     sIdx = Math.min(sIdx + 1, sendMessages.length - 1);
     sendLoader.textContent = sendMessages[sIdx];
-  }, 2500);
+  }, 800);
 
   const webhookTarget = (_previewPayload.lead_source === 'custom') ? WEBHOOK_URL_CUSTOM : WEBHOOK_URL;
 
@@ -608,7 +608,7 @@ async function epLaunch() {
     if (typeof resetCampaignForm === 'function') resetCampaignForm();
     window.scrollTo({ top: 0, behavior: 'smooth' });
     showToast('Campaign launched successfully!', 'success');
-  }, 3000);
+  }, 1500);
 }
 
 // ── Confirmation modal (kept for internal reference) ───────────
@@ -727,11 +727,11 @@ async function openConfirmModal() {
     path.style.animation = '';
   }
 
-  // Auto-close modal after 3.0 seconds and reset form
+  // Auto-close modal after 1.5 seconds and reset form
   if (window._confirmModalTimer) clearTimeout(window._confirmModalTimer);
   window._confirmModalTimer = setTimeout(function() {
     if (!modal.classList.contains('hidden')) closeConfirmModal();
-  }, 3000);
+  }, 1500);
 
   // Route to the correct webhook based on audience source
   const webhookTarget = (audienceSource === 'custom') ? WEBHOOK_URL_CUSTOM : WEBHOOK_URL;
