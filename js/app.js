@@ -555,7 +555,7 @@ function epEdit() {
 }
 
 // ── epLaunch — Final campaign submission ───────────────────────
-function epLaunch() {
+async function epLaunch() {
   if (!_previewPayload) { showToast('No payload found. Please regenerate preview.', 'error'); return; }
 
   const launchBtn = document.getElementById('ep-launch-btn');
@@ -564,20 +564,42 @@ function epLaunch() {
 
   launchBtn.disabled = true;
   actionsDiv.style.display = 'none';
+  sendLoader.style.display = 'block';
 
-  // Fire webhook fire-and-forget — do NOT await so we don't block the UI
+  const sendMessages = ['Sending your campaign...', 'Emails going out...', 'Campaign launched!'];
+  let sIdx = 0;
+  sendLoader.textContent = sendMessages[0];
+  const sendInterval = setInterval(() => {
+    sIdx = Math.min(sIdx + 1, sendMessages.length - 1);
+    sendLoader.textContent = sendMessages[sIdx];
+  }, 800);
+
   const webhookTarget = (_previewPayload.lead_source === 'custom') ? WEBHOOK_URL_CUSTOM : WEBHOOK_URL;
-  fetch(webhookTarget, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(_previewPayload)
-  }).catch(err => console.warn('Campaign webhook error:', err));
 
-  // Immediately show success message
+  try {
+    const res = await fetch(webhookTarget, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(_previewPayload)
+    });
+    if (!res.ok) throw new Error('API returned ' + res.status);
+  } catch (err) {
+    console.warn('Campaign webhook error:', err);
+    clearInterval(sendInterval);
+    sendLoader.style.display = 'none';
+    if (typeof showFallbackError === 'function') {
+       showFallbackError('Launch Failed', 'We hit a snag while launching your campaign. Please try again or contact support.');
+    }
+    launchBtn.disabled = false;
+    actionsDiv.style.display = 'flex';
+    return;
+  }
+
+  clearInterval(sendInterval);
   sendLoader.style.display = 'none';
   document.getElementById('ep-success').style.display = 'block';
 
-  // Redirect to New Campaign form after exactly 3 seconds
+  // Reset form after 3 seconds and navigate to New Campaign
   setTimeout(() => {
     document.getElementById('email-preview-section').style.display = 'none';
     document.getElementById('new-campaign-header').style.display = '';
