@@ -577,16 +577,13 @@ function epLaunch() {
   sendLoader.style.display = 'none';
   document.getElementById('ep-success').style.display = 'block';
 
-  // Clear the email preview iframe immediately so browser doesn't hold it
-  const epBody = document.getElementById('ep-body');
-  if (epBody) epBody.srcdoc = '';
-
   // Redirect to New Campaign form after exactly 3 seconds
   setTimeout(() => {
     document.getElementById('email-preview-section').style.display = 'none';
     document.getElementById('new-campaign-header').style.display = '';
     document.getElementById('wizard-layout').style.display = '';
     _previewPayload = null;
+    if (typeof resetCampaignForm === 'function') resetCampaignForm();
     showToast('Campaign launched successfully!', 'success');
     navigateTo('new-campaign');
   }, 3000);
