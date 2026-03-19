@@ -727,11 +727,11 @@ async function openConfirmModal() {
     path.style.animation = '';
   }
 
-  // Auto-close modal after 3.5 seconds and reset form
+  // Auto-close modal after 3.0 seconds and reset form
   if (window._confirmModalTimer) clearTimeout(window._confirmModalTimer);
   window._confirmModalTimer = setTimeout(function() {
     if (!modal.classList.contains('hidden')) closeConfirmModal();
-  }, 3500);
+  }, 3000);
 
   // Route to the correct webhook based on audience source
   const webhookTarget = (audienceSource === 'custom') ? WEBHOOK_URL_CUSTOM : WEBHOOK_URL;
